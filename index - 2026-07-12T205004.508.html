@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>RoiApple</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+:root{
+  --bg:#0C0B0E;--bg2:#141217;--bg3:#1B1920;
+  --line:rgba(255,255,255,0.08);--line2:rgba(255,255,255,0.14);
+  --text:#F0EEF5;--muted:rgba(240,238,245,0.5);--dim:rgba(240,238,245,0.25);
+  --ora:#F4511E;--mag:#E8196D;--green:#1DCC88;--gold:#F5C842;--red:#FF4444;
+}
+html,body{height:100%;overflow:hidden}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);display:flex;flex-direction:column}
+
+/* HEADER */
+.hdr{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--line);background:var(--bg);flex-shrink:0}
+.logo{font-family:'Syne',sans-serif;font-weight:800;font-size:20px}
+.logo span{color:var(--ora)}
+.hdr-bal{display:flex;flex-direction:column;align-items:flex-end}
+.hdr-bal-lbl{font-size:9px;color:var(--dim);text-transform:uppercase;letter-spacing:.06em}
+.hdr-bal-val{font-family:'Syne',sans-serif;font-weight:800;font-size:16px;color:var(--gold)}
+
+/* PAGES */
+.pages{flex:1;overflow:hidden;position:relative}
+.page{position:absolute;inset:0;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;display:none;padding:16px 14px 80px}
+.page.active{display:block}
+/* scrollbar */
+.page::-webkit-scrollbar{width:3px}
+.page::-webkit-scrollbar-thumb{background:var(--line2);border-radius:3px}
+
+/* BOTTOM NAV */
+.bnav{display:flex;background:rgba(12,11,14,0.97);border-top:1px solid var(--line);flex-shrink:0;padding-bottom:env(safe-area-inset-bottom)}
+.bnav-btn{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;padding:8px 4px;border:none;background:transparent;color:var(--dim);font-family:'DM Sans',sans-serif;font-size:10px;font-weight:500;cursor:pointer;transition:color .15s;min-height:52px}
+.bnav-btn .ico{font-size:20px;line-height:1}
+.bnav-btn.active{color:var(--ora)}
+
+/* CATALOG */
+.sec-title{font-family:'Syne',sans-serif;font-size:22px;font-weight:800;letter-spacing:-1px;margin-bottom:4px}
+.sec-title span{color:var(--mag)}
+.sec-sub{font-size:12px;color:var(--muted);margin-bottom:16px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.pc{background:var(--bg2);border:1px solid var(--line);border-radius:12px;overflow:hidden;transition:transform .15s}
+.pc:active{transform:scale(.98)}
+.pc.owned{border-color:rgba(244,81,30,.5)}
+.pc-img{background:linear-gradient(145deg,#14121b,#1d1a26);height:130px;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden}
+.pc.owned .pc-img{background:linear-gradient(145deg,#1f0f1e,#2a1525)}
+.pc-img img{height:100px;width:auto;object-fit:contain;filter:drop-shadow(0 4px 12px rgba(0,0,0,.7));transition:transform .3s}
+.pc:active .pc-img img{transform:scale(1.05)}
+.pc-tag{position:absolute;top:6px;left:6px;font-size:8px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;background:rgba(244,81,30,.18);border:1px solid rgba(244,81,30,.35);color:#FF6A3D;padding:2px 6px;border-radius:3px}
+.pc-owned-badge{position:absolute;top:6px;right:6px;background:var(--ora);color:#fff;font-size:8px;font-weight:700;padding:2px 6px;border-radius:3px}
+.pc-body{padding:10px 10px 12px}
+.pc-name{font-family:'Syne',sans-serif;font-weight:700;font-size:13px;margin-bottom:1px}
+.pc-year{font-size:9px;color:var(--dim);margin-bottom:8px}
+.pc-row{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--line);border:1px solid var(--line);border-radius:6px;overflow:hidden;margin-bottom:8px}
+.pc-stat{background:var(--bg3);padding:6px 8px}
+.pc-stat-l{font-size:8px;color:var(--dim);text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px}
+.pc-stat-v{font-family:'Syne',sans-serif;font-weight:800;font-size:13px}
+.pc-stat-v.g{color:var(--green)}
+.pc-clock{display:flex;align-items:center;gap:5px;background:rgba(245,200,66,.07);border:1px solid rgba(245,200,66,.2);border-radius:5px;padding:5px 7px;margin-bottom:7px;font-size:9px}
+.pc-clock-t{font-family:'Syne',sans-serif;font-weight:800;font-size:11px;color:var(--gold);margin-left:auto}
+.pc-clock-r{font-family:'Syne',sans-serif;font-weight:800;font-size:11px;color:var(--green);margin-left:auto}
+.btn-buy{width:100%;background:linear-gradient(90deg,var(--ora),var(--mag));border:none;border-radius:6px;color:#fff;font-family:'DM Sans',sans-serif;font-weight:600;font-size:12px;padding:8px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:4px}
+.btn-buy:disabled{background:var(--bg3);border:1px solid var(--line2);color:var(--dim);cursor:not-allowed}
+
+/* HOME */
+.stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:20px}
+.stat-card{background:var(--bg2);border:1px solid var(--line);border-radius:10px;padding:14px 12px}
+.stat-l{font-size:9px;color:var(--dim);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px}
+.stat-v{font-family:'Syne',sans-serif;font-weight:800;font-size:20px}
+.stat-v.ora{color:var(--ora)}.stat-v.mag{color:#FF4D96}.stat-v.grn{color:var(--green)}.stat-v.gld{color:var(--gold)}
+.empty-state{text-align:center;padding:40px 20px;color:var(--dim)}
+.empty-ico{font-size:48px;margin-bottom:12px}
+.empty-txt{font-size:14px;margin-bottom:16px}
+.btn-go{background:linear-gradient(90deg,var(--ora),var(--mag));border:none;border-radius:8px;color:#fff;font-family:'DM Sans',sans-serif;font-weight:600;font-size:14px;padding:12px 28px;cursor:pointer}
+.collect-btn{width:100%;background:transparent;border:1px solid var(--green);color:var(--green);font-family:'DM Sans',sans-serif;font-weight:600;font-size:13px;padding:10px;border-radius:8px;cursor:pointer;margin-bottom:16px;transition:background .15s}
+.collect-btn:active{background:rgba(29,204,136,.1)}
+
+/* WALLET */
+.wcard{background:var(--bg2);border:1px solid var(--line);border-radius:12px;padding:20px;margin-bottom:14px;position:relative;overflow:hidden}
+.wcard::before{content:'';position:absolute;top:0;left:0;right:0;height:2px}
+.wcard.dep::before{background:linear-gradient(90deg,var(--ora),var(--mag))}
+.wcard.wdr::before{background:linear-gradient(90deg,var(--green),#00A060)}
+.wcard-title{font-family:'Syne',sans-serif;font-weight:800;font-size:15px;margin-bottom:4px}
+.wcard-sub{font-size:12px;color:var(--muted);margin-bottom:16px;line-height:1.5}
+.wlbl{font-size:9px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--dim);margin-bottom:6px;margin-top:12px}
+.wlbl:first-of-type{margin-top:0}
+.addr-box{background:var(--bg3);border:1px solid var(--line2);border-radius:7px;padding:10px 12px;display:flex;align-items:center;gap:8px;margin-bottom:12px}
+.addr-txt{font-family:monospace;font-size:10px;color:var(--text);flex:1;word-break:break-all;line-height:1.4}
+.copy-btn{background:var(--ora);border:none;border-radius:5px;color:#fff;font-size:11px;font-weight:600;padding:6px 10px;cursor:pointer;flex-shrink:0;white-space:nowrap}
+.net-pill{display:inline-block;background:rgba(29,204,136,.1);border:1px solid rgba(29,204,136,.3);color:var(--green);font-size:11px;font-weight:700;padding:5px 12px;border-radius:5px;margin-bottom:12px}
+.winput{width:100%;background:var(--bg3);border:1px solid var(--line2);border-radius:7px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;padding:10px 12px;outline:none;margin-bottom:8px;transition:border-color .15s}
+.winput:focus{border-color:var(--ora)}
+.winput::placeholder{color:var(--dim)}
+.wbtn{width:100%;border:none;border-radius:7px;color:#fff;font-family:'DM Sans',sans-serif;font-weight:600;font-size:13px;padding:11px;cursor:pointer;transition:opacity .15s}
+.wbtn.ora{background:linear-gradient(90deg,var(--ora),var(--mag))}
+.wbtn.grn{background:linear-gradient(90deg,var(--green),#00A060);color:#000}
+.wbtn:active{opacity:.85}
+.winfo{background:rgba(245,200,66,.06);border:1px solid rgba(245,200,66,.2);border-radius:7px;padding:10px 12px;margin-top:12px;font-size:11px;color:var(--muted);line-height:1.55}
+.winfo strong{color:var(--gold)}
+.tx-list{margin-top:20px}
+.tx-title{font-size:12px;font-weight:600;color:var(--muted);margin-bottom:10px;text-transform:uppercase;letter-spacing:.06em}
+.tx{display:flex;align-items:center;gap:8px;padding:10px 0;border-bottom:1px solid var(--line);font-size:11px}
+.tx:last-child{border:none}
+.tx-type{font-size:8px;font-weight:700;padding:2px 6px;border-radius:3px;text-transform:uppercase;flex-shrink:0}
+.tx-type.d{background:rgba(29,204,136,.12);color:var(--green)}
+.tx-type.w{background:rgba(244,81,30,.12);color:var(--ora)}
+.tx-hash{flex:1;color:var(--dim);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:monospace;font-size:10px}
+.tx-amt{font-family:'Syne',sans-serif;font-weight:700;font-size:12px;flex-shrink:0}
+.tx-amt.d{color:var(--green)}.tx-amt.w{color:var(--ora)}
+.tx-status{font-size:8px;padding:2px 6px;border-radius:3px;flex-shrink:0}
+.tx-status.pend{background:rgba(245,200,66,.12);color:var(--gold)}
+.tx-status.done{background:rgba(29,204,136,.12);color:var(--green)}
+.tx-status.rej{background:rgba(255,68,68,.12);color:var(--red)}
+
+/* REFERIDOS */
+.ref-levels{display:flex;flex-direction:column;gap:10px;margin-bottom:20px}
+.ref-lv{background:var(--bg2);border:1px solid var(--line);border-radius:12px;padding:16px;position:relative;overflow:hidden;display:flex;align-items:center;gap:16px}
+.ref-lv::before{content:'';position:absolute;top:0;left:0;bottom:0;width:3px}
+.ref-lv.l1::before{background:var(--ora)}.ref-lv.l2::before{background:#FF4D96}.ref-lv.l3::before{background:#B06EFF}
+.ref-lv-pct{font-family:'Syne',sans-serif;font-weight:800;font-size:32px;flex-shrink:0}
+.l1 .ref-lv-pct{color:var(--ora)}.l2 .ref-lv-pct{color:#FF4D96}.l3 .ref-lv-pct{color:#B06EFF}
+.ref-lv-info{}
+.ref-lv-tag{font-size:9px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--dim);margin-bottom:3px}
+.ref-lv-desc{font-size:12px;color:var(--muted);line-height:1.45}
+.ref-link-card{background:var(--bg2);border:1px solid var(--line2);border-radius:12px;padding:16px;margin-bottom:14px}
+.ref-link-lbl{font-size:10px;color:var(--muted);margin-bottom:8px}
+.ref-link-row{display:flex;gap:8px}
+.ref-link-inp{flex:1;background:var(--bg3);border:1px solid var(--line2);border-radius:6px;color:var(--text);font-family:monospace;font-size:10px;padding:8px 10px;outline:none}
+.ref-copy{background:var(--ora);border:none;border-radius:6px;color:#fff;font-weight:600;font-size:11px;padding:8px 14px;cursor:pointer;white-space:nowrap;font-family:'DM Sans',sans-serif}
+
+/* TOAST */
+#toast{position:fixed;bottom:70px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--bg2);border:1px solid var(--line2);color:var(--text);font-size:13px;font-weight:500;padding:10px 18px;border-radius:20px;box-shadow:0 4px 20px rgba(0,0,0,.5);opacity:0;transition:all .25s;pointer-events:none;white-space:nowrap;z-index:999}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+</style>
+</head>
+<body>
+
+<div id="toast"></div>
+
+<!-- HEADER -->
+<div class="hdr">
+  <div class="logo">Roi<span>Apple</span></div>
+  <div class="hdr-bal">
+    <div class="hdr-bal-lbl">Balance</div>
+    <div class="hdr-bal-val" id="hbal">$0.00</div>
+  </div>
+</div>
+
+<!-- PAGES -->
+<div class="pages">
+
+  <!-- CATÁLOGO -->
+  <div class="page" id="page-catalog">
+    <div class="sec-title">Catálogo <span>completo</span></div>
+    <div class="sec-sub">4% diario · recuperas tu inversión en 25 días</div>
+    <div class="grid" id="cat-grid"></div>
+  </div>
+
+  <!-- INICIO / MIS IPHONES -->
+  <div class="page active" id="page-home">
+    <div style="background:var(--bg2);border:1px solid var(--line);border-radius:12px;padding:20px;margin-bottom:20px;text-align:center">
+      <div style="font-size:11px;color:var(--dim);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px">Balance disponible</div>
+      <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:36px;color:var(--gold)" id="sb-bal">$0.00</div>
+    </div>
+    <button class="collect-btn" onclick="collectAll()">💰 Cobrar todo</button>
+    <div id="home-empty" style="display:none">
+      <div class="empty-state">
+        <div class="empty-ico">📱</div>
+        <div class="empty-txt">Aún no tienes iPhones</div>
+        <button class="btn-go" onclick="goTo('catalog')">Ver catálogo</button>
+      </div>
+    </div>
+    <div class="grid" id="my-grid"></div>
+  </div>
+
+  <!-- BILLETERA -->
+  <div class="page" id="page-wallet">
+    <!-- RECARGA -->
+    <div class="wcard dep">
+      <div class="wcard-title">Recargar saldo</div>
+      <div class="wcard-sub">Envía USDT BEP-20 a esta dirección y confirma con el hash.</div>
+      <div class="wlbl">Red</div>
+      <div class="net-pill">BEP-20 (Binance Smart Chain)</div>
+      <div class="wlbl">Dirección</div>
+      <div class="addr-box">
+        <div class="addr-txt">0x264925CA49fd89c54E8413264eAB91b8eE686E3d</div>
+        <button class="copy-btn" onclick="copyAddr()">Copiar</button>
+      </div>
+      <div class="wlbl">Hash de tu transacción</div>
+      <input class="winput" id="hash-inp" type="text" placeholder="0x... pega el hash aquí">
+      <div class="wlbl">Monto enviado (USDT)</div>
+      <input class="winput" id="amt-inp" type="number" min="1" step="0.01" placeholder="Ej: 50.00">
+      <button class="wbtn ora" onclick="submitRecharge()">Confirmar recarga</button>
+      <div class="winfo"><strong>Tiempo:</strong> 15–60 min. Solo BEP-20.</div>
+    </div>
+    <!-- RETIRO -->
+    <div class="wcard wdr">
+      <div class="wcard-title">Retirar ganancias</div>
+      <div class="wcard-sub">Mínimo <strong style="color:var(--green)">$5.00</strong> · Red BEP-20 · 24–48 h</div>
+      <div class="wlbl">Tu wallet BEP-20</div>
+      <input class="winput" id="wdr-addr" type="text" placeholder="0x... tu dirección BEP-20">
+      <div class="wlbl">Monto a retirar (USD)</div>
+      <input class="winput" id="wdr-amt" type="number" min="5" step="0.01" placeholder="Mínimo $5.00">
+      <button class="wbtn grn" onclick="submitWithdraw()">Solicitar retiro</button>
+      <div class="winfo" style="background:rgba(29,204,136,.05);border-color:rgba(29,204,136,.2)">
+        Disponible: <strong style="color:var(--green)" id="wdr-bal">$0.00</strong>
+      </div>
+    </div>
+    <!-- HISTORIAL -->
+    <div class="tx-list">
+      <div class="tx-title">Historial</div>
+      <div id="tx-list-items"><div style="color:var(--dim);font-size:13px;padding:10px 0">Sin transacciones aún.</div></div>
+    </div>
+  </div>
+
+  <!-- REFERIDOS -->
+  <div class="page" id="page-ref">
+    <div class="sec-title">Programa de <span>Referidos</span></div>
+    <div class="sec-sub">Gana comisiones automáticas cuando tu red compra iPhones</div>
+    <div class="ref-levels">
+      <div class="ref-lv l1">
+        <div class="ref-lv-pct">8%</div>
+        <div class="ref-lv-info">
+          <div class="ref-lv-tag">Nivel 1 — Directo</div>
+          <div class="ref-lv-desc">De cada compra de quien invitaste directamente</div>
+        </div>
+      </div>
+      <div class="ref-lv l2">
+        <div class="ref-lv-pct">4%</div>
+        <div class="ref-lv-info">
+          <div class="ref-lv-tag">Nivel 2 — Indirecto</div>
+          <div class="ref-lv-desc">De las compras de los referidos de tus referidos</div>
+        </div>
+      </div>
+      <div class="ref-lv l3">
+        <div class="ref-lv-pct">2%</div>
+        <div class="ref-lv-info">
+          <div class="ref-lv-tag">Nivel 3 — Red</div>
+          <div class="ref-lv-desc">Del tercer nivel de profundidad de tu red</div>
+        </div>
+      </div>
+    </div>
+    <div class="ref-link-card">
+      <div class="ref-link-lbl">Tu enlace de referido</div>
+      <div class="ref-link-row">
+        <input class="ref-link-inp" id="ref-inp" readonly>
+        <button class="ref-copy" onclick="copyRef()">Copiar</button>
+      </div>
+    </div>
+  </div>
+
+</div><!-- .pages -->
+
+<!-- BOTTOM NAV -->
+<div class="bnav">
+  <button class="bnav-btn active" id="bn-home" onclick="goTo('home')">
+    <span class="ico">🏠</span>Inicio
+  </button>
+  <button class="bnav-btn" id="bn-catalog" onclick="goTo('catalog')">
+    <span class="ico">📱</span>Catálogo
+  </button>
+  <button class="bnav-btn" id="bn-wallet" onclick="goTo('wallet')">
+    <span class="ico">💳</span>Billetera
+  </button>
+  <button class="bnav-btn" id="bn-ref" onclick="goTo('ref')">
+    <span class="ico">👥</span>Referidos
+  </button>
+</div>
+
+<script>
+// ══ CONFIG ══
+const ADDR='0x264925CA49fd89c54E8413264eAB91b8eE686E3d';
+const PH=[
+  {id:'2g',  name:'iPhone 2G',  year:2007,price:5,   img:'https://fdn2.gsmarena.com/vv/pics/apple/apple_iphone_00.jpg'},
+  {id:'3g',  name:'iPhone 3G',  year:2008,price:6,   img:'https://fdn2.gsmarena.com/vv/bigpic/apple-iphone-3gs.jpg'},
+  {id:'3gs', name:'iPhone 3GS', year:2009,price:7,   img:'https://fdn2.gsmarena.com/vv/bigpic/apple-iphone-3gs.jpg'},
+  {id:'4',   name:'iPhone 4',   year:2010,price:9,   img:'https://fdn2.gsmarena.com/vv/bigpic/apple-iphone-4.jpg'},
+  {id:'4s',  name:'iPhone 4S',  year:2011,price:11,  img:'https://fdn2.gsmarena.com/vv/bigpic/apple-iphone-4s.jpg'},
+  {id:'5',   name:'iPhone 5',   year:2012,price:13,  img:'https://fdn2.gsmarena.com/vv/bigpic/apple-iphone-5.jpg'},
+  {id:'5s',  name:'iPhone 5S',  year:2013,price:16,  img:'https://fdn2.gsmarena.com/vv/bigpic/apple-iphone-5s.jpg'},
+  {id:'6',   name:'iPhone 6',   year:2014,price:20,  img:'https://fdn2.gsmarena.com/vv/bigpic/apple-iphone-6s.jpg'},
+  {id:'6s',  name:'iPhone 6S',  year:2015,price:25,  img:'https://fdn2.gsmarena.com/vv/bigpic/apple-iphone-6s.jpg'},
+  {id:'7',   name:'iPhone 7',   year:2016,price:30,  img:'https://fdn2.gsmarena.com/vv/bigpic/apple-iphone-x.jpg'},
+  {id:'8',   name:'iPhone 8',   year:2017,price:37,  img:'https://fdn2.gsmarena.com/vv/bigpic/apple-iphone-8.jpg'},
+  {id:'x',   name:'iPhone X',   year:2017,price:45,  img:'https://fdn2.gsmarena.com/vv/bigpic/apple-iphone-x.jpg'},
+  {id:'xr',  name:'iPhone XR',  year:2018,price:55,  img:'https://fdn2.gsmarena.com/vv/bigpic/apple-iphone-xr.jpg'},
+  {id:'xs',  name:'iPhone XS',  year:2018,price:67,  img:'https://fdn2.gsmarena.com/vv/bigpic/apple-iphone-xs.jpg'},
+  {id:'11',  name:'iPhone 11',  year:2019,price:80,  img:'https://fdn2.gsmarena.com/vv/bigpic/apple-iphone-11.jpg'},
+  {id:'12',  name:'iPhone 12',  year:2020,price:97,  img:'https://fdn2.gsmarena.com/vv/bigpic/apple-iphone-12.jpg'},
+  {id:'13',  name:'iPhone 13',  year:2021,price:117, img:'https://fdn2.gsmarena.com/vv/bigpic/apple-iphone-13.jpg'},
+  {id:'14',  name:'iPhone 14',  year:2022,price:140, img:'https://fdn2.gsmarena.com/vv/bigpic/apple-iphone-14.jpg'},
+  {id:'15',  name:'iPhone 15',  year:2023,price:167, img:'https://fdn2.gsmarena.com/vv/bigpic/apple-iphone-15.jpg'},
+  {id:'16',  name:'iPhone 16',  year:2024,price:200, img:'https://fdn2.gsmarena.com/vv/bigpic/apple-iphone-16.jpg'},
+  {id:'17',  name:'iPhone 17',  year:2025,price:240, img:'https://fdn2.gsmarena.com/vv/bigpic/apple-iphone-17.jpg'},
+];
+PH.forEach(p=>{p.daily=parseFloat((p.price/25).toFixed(4));});
+
+// ══ STATE ══
+const KEY='roiapple_v4';
+let S={balance:0,totalEarned:0,portfolio:{},pending:{},clockStart:{},txs:[],refCode:'REF-'+Math.random().toString(36).substr(2,6).toUpperCase(),gt:0,lt:Date.now()};
+try{const r=localStorage.getItem(KEY);if(r){const p=JSON.parse(r);if(p&&typeof p.balance!=='undefined'){S=p;S.lt=Date.now();}}}catch(e){}
+const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}};
+const f=n=>'$'+Math.abs(n).toFixed(2);
+const fCD=ms=>{if(ms<=0)return null;const s=Math.floor(ms/1000),h=Math.floor(s/3600),m=Math.floor((s%3600)/60),sc=s%60;return String(h).padStart(2,'0')+':'+String(m).padStart(2,'0')+':'+String(sc).padStart(2,'0');};
+const fD=()=>new Date().toLocaleString('es-ES',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
+
+// ══ TELEGRAM ══
+const tgWA=window.Telegram&&window.Telegram.WebApp;
+if(tgWA){tgWA.ready();tgWA.expand();}
+const tgUser=tgWA&&tgWA.initDataUnsafe&&tgWA.initDataUnsafe.user;
+if(tgUser){
+  S.name=(tgUser.first_name||'')+(tgUser.last_name?' '+tgUser.last_name:'');
+  S.tgId=String(tgUser.id);
+  S.username=tgUser.username||'';
+}
+
+// ══ TOAST ══
+let toastT;
+function toast(msg){
+  const el=document.getElementById('toast');
+  el.textContent=msg;el.classList.add('show');
+  clearTimeout(toastT);toastT=setTimeout(()=>el.classList.remove('show'),2500);
+}
+
+// ══ NAV ══
+function goTo(page){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.bnav-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('page-'+page).classList.add('active');
+  document.getElementById('bn-'+page).classList.add('active');
+  if(page==='wallet')renderTxList();
+  if(page==='home')renderMyGrid();
+}
+
+// ══ ACTIONS ══
+function buyPhone(id){
+  const p=PH.find(x=>x.id===id);if(!p)return;
+  if(S.balance<p.price){toast('Saldo insuficiente. Recarga en Billetera.');return;}
+  S.balance-=p.price;
+  S.portfolio[id]=(S.portfolio[id]||0)+1;
+  if(!S.clockStart[id])S.clockStart[id]=Date.now();
+  if(!S.pending)S.pending={};
+  toast('✓ Compraste '+p.name);
+  save();renderStats();renderCatGrid();renderMyGrid();
+}
+
+function collectAll(){
+  let tot=0;const now=Date.now();
+  Object.entries(S.pending||{}).forEach(([id,a])=>{
+    if(a<=0)return;
+    if(now-(S.clockStart[id]||0)>=86400000){tot+=a;S.pending[id]=0;S.clockStart[id]=now;}
+  });
+  if(tot<0.001){toast('Sin ganancias listas. Espera 24 h.');return;}
+  S.balance+=tot;S.totalEarned=(S.totalEarned||0)+tot;
+  toast('💰 Cobraste '+f(tot));
+  save();renderStats();renderMyGrid();
+}
+
+function copyAddr(){
+  navigator.clipboard.writeText(ADDR).then(()=>toast('Dirección copiada')).catch(()=>toast('Dirección copiada'));
+}
+function copyRef(){
+  const v=document.getElementById('ref-inp').value;
+  navigator.clipboard.writeText(v).then(()=>toast('Enlace copiado')).catch(()=>toast('Enlace copiado'));
+}
+
+function submitRecharge(){
+  const hash=document.getElementById('hash-inp').value.trim();
+  const amt=parseFloat(document.getElementById('amt-inp').value);
+  if(!hash||hash.length<10){toast('Hash inválido');return;}
+  if(!amt||amt<=0){toast('Monto inválido');return;}
+  const txId='TX-'+Date.now();
+  if(!S.txs)S.txs=[];
+  S.txs.unshift({id:txId,type:'deposit',hash,amount:amt,status:'pending',date:fD()});
+  document.getElementById('hash-inp').value='';
+  document.getElementById('amt-inp').value='';
+  toast('✓ Recarga enviada a revisión');
+  save();renderTxList();
+}
+
+function submitWithdraw(){
+  const addr=document.getElementById('wdr-addr').value.trim();
+  const amt=parseFloat(document.getElementById('wdr-amt').value);
+  if(!addr||addr.length<10){toast('Dirección inválida');return;}
+  if(!amt||amt<5){toast('Mínimo $5.00');return;}
+  if(amt>S.balance){toast('Saldo insuficiente');return;}
+  S.balance-=amt;
+  if(!S.txs)S.txs=[];
+  S.txs.unshift({id:'TX-'+Date.now(),type:'withdraw',wallet:addr,amount:amt,status:'pending',date:fD()});
+  document.getElementById('wdr-addr').value='';
+  document.getElementById('wdr-amt').value='';
+  toast('✓ Retiro solicitado');
+  save();renderTxList();renderStats();
+}
+
+// ══ RENDER ══
+function renderStats(){
+  const set=(id,v)=>{const el=document.getElementById(id);if(el)el.textContent=v;};
+  set('hbal',f(S.balance));
+  set('sb-bal',f(S.balance));
+  set('wdr-bal',f(S.balance));
+}
+
+function makeCard(p,owned){
+  const qty=S.portfolio[p.id]||0;
+  const pend=S.pending&&S.pending[p.id]||0;
+  const canBuy=S.balance>=p.price;
+  const now=Date.now();
+  const rem=qty>0?86400000-(now-(S.clockStart[p.id]||now)):0;
+  const cd=fCD(rem);
+  const roi=((p.daily/p.price)*100).toFixed(0);
+
+  const clockHtml=qty>0?(cd
+    ?`<div class="pc-clock"><span style="font-size:12px">⏱</span><span style="color:var(--dim);font-size:9px">Cobro en</span><span class="pc-clock-t">${cd}</span></div>`
+    :`<div class="pc-clock"><span style="font-size:12px">✅</span><span class="pc-clock-r">¡Listo!</span></div>`):'';
+
+  return `<div class="pc${qty>0?' owned':''}">
+    <div class="pc-img">
+      <div class="pc-tag">${p.id==='17'?'NUEVO':roi+'%/día'}</div>
+      ${qty>0?`<div class="pc-owned-badge">${qty}×</div>`:''}
+      <img src="${p.img}" alt="${p.name}" loading="lazy" onerror="this.style.opacity='.3'">
+    </div>
+    <div class="pc-body">
+      <div class="pc-name">${p.name}</div>
+      <div class="pc-year">${p.year}</div>
+      <div class="pc-row">
+        <div class="pc-stat"><div class="pc-stat-l">Precio</div><div class="pc-stat-v">${f(p.price)}</div></div>
+        <div class="pc-stat"><div class="pc-stat-l">Ganas/día</div><div class="pc-stat-v g">+${f(p.daily)}</div></div>
+      </div>
+      ${clockHtml}
+      <button class="btn-buy" ${canBuy?'':'disabled'} onclick="buyPhone('${p.id}')">
+        ${canBuy?'🛒 Comprar '+f(p.price):'🔒 Necesitas '+f(p.price-S.balance)+' más'}
+      </button>
+    </div>
+  </div>`;
+}
+
+function renderCatGrid(){
+  const g=document.getElementById('cat-grid');if(!g)return;
+  g.innerHTML=PH.map(p=>makeCard(p,false)).join('');
+}
+
+function renderMyGrid(){
+  const g=document.getElementById('my-grid');if(!g)return;
+  const owned=PH.filter(p=>(S.portfolio[p.id]||0)>0);
+  const empty=document.getElementById('home-empty');
+  if(owned.length===0){
+    g.innerHTML='';
+    if(empty)empty.style.display='block';
+  } else {
+    if(empty)empty.style.display='none';
+    g.innerHTML=owned.map(p=>makeCard(p,true)).join('');
+  }
+}
+
+function renderTxList(){
+  const el=document.getElementById('tx-list-items');if(!el)return;
+  if(!S.txs||!S.txs.length){el.innerHTML='<div style="color:var(--dim);font-size:13px;padding:10px 0">Sin transacciones aún.</div>';return;}
+  el.innerHTML=S.txs.slice(0,20).map(tx=>`
+    <div class="tx">
+      <div class="tx-type ${tx.type==='deposit'?'d':'w'}">${tx.type==='deposit'?'Recarga':'Retiro'}</div>
+      <div class="tx-hash">${tx.type==='deposit'?tx.hash:(tx.wallet||'')}</div>
+      <div class="tx-amt ${tx.type==='deposit'?'d':'w'}">${tx.type==='deposit'?'+':'-'}${f(tx.amount)}</div>
+      <div class="tx-status ${tx.status==='pending'?'pend':tx.status==='done'?'done':'rej'}">${tx.status==='pending'?'Pendiente':tx.status==='done'?'Listo':'Rechazado'}</div>
+    </div>`).join('');
+}
+
+// ══ TICK ══
+let tn=0;
+function tick(){
+  const now=Date.now(),delta=now-S.lt;
+  S.gt=(S.gt||0)+delta;S.lt=now;
+  const df=delta/86400000;
+  Object.entries(S.portfolio||{}).forEach(([id,q])=>{
+    if(q<=0)return;const p=PH.find(x=>x.id===id);if(!p)return;
+    if(!S.pending)S.pending={};
+    S.pending[id]=(S.pending[id]||0)+p.daily*q*df;
+  });
+  tn++;if(tn%10===0)save();
+  if(tn%5===0){renderStats();renderCatGrid();renderMyGrid();}
+  else renderStats();
+}
+
+// ══ INIT ══
+document.getElementById('ref-inp').value='https://t.me/RoiAppleInvest_bot?start='+(S.refCode||'REF-000000');
+renderStats();
+renderMyGrid();
+renderCatGrid();
+setInterval(tick,1000);
+</script>
+</body>
+</html>
