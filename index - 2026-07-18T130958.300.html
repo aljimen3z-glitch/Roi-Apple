@@ -1,0 +1,985 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>RoiApple</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<link href="https://fonts.googleapis.com/css2?family=Exo+2:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=Orbitron:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+:root{
+  --bg:#060806;
+  --bg2:#0A0F0A;
+  --bg3:#0F160F;
+  --line:rgba(0,255,80,0.08);
+  --line2:rgba(0,255,80,0.18);
+  --text:#E8F5E8;
+  --muted:rgba(180,230,180,0.6);
+  --dim:rgba(120,180,120,0.38);
+  --ora:#39FF14;
+  --mag:#00FF41;
+  --green:#39FF14;
+  --gold:#FFFFFF;
+  --red:#FF3333;
+  --purple:#00FF41;
+  --accent:#39FF14;
+  --cyan:#39FF14;
+}
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Exo 2',sans-serif;font-size:15px;-webkit-font-smoothing:antialiased}
+body{display:flex;flex-direction:column;min-height:100vh}
+
+.hdr{display:none}
+.bnav{display:none}
+#auth{position:fixed;inset:0;z-index:999;background:var(--bg);display:flex;align-items:center;justify-content:center;padding:20px}
+.abox{width:100%;max-width:400px;background:var(--bg2);border:1px solid var(--line2);border-radius:16px;padding:32px;position:relative;overflow:hidden}
+.abox::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(135deg,#39FF14,#00CC10)}
+.alogo{font-family:'Orbitron',sans-serif;font-weight:800;font-size:28px;text-align:center;margin-bottom:6px}
+.alogo span{color:var(--ora)}
+.asub{text-align:center;font-size:13px;color:var(--muted);margin-bottom:24px}
+.atabs{display:flex;background:var(--bg3);border-radius:8px;padding:3px;margin-bottom:20px}
+.atab{flex:1;padding:8px;text-align:center;border:none;background:transparent;color:var(--muted);font-family:'Exo 2',sans-serif;font-size:13px;cursor:pointer;border-radius:6px;transition:all .15s}
+.atab.on{background:var(--bg2);color:var(--text)}
+.flbl{font-size:10px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--dim);margin-bottom:5px;margin-top:12px}
+.fi{width:100%;background:var(--bg3);border:1px solid var(--line2);border-radius:7px;color:var(--text);font-family:'Exo 2',sans-serif;font-size:14px;padding:11px 14px;outline:none;transition:border-color .15s}
+.fi:focus{border-color:var(--ora)}
+.fi::placeholder{color:var(--dim)}
+.abtn{width:100%;margin-top:18px;background:linear-gradient(135deg,#39FF14,#00CC10);border:none;border-radius:8px;color:#060806;font-family:'Exo 2',sans-serif;font-weight:600;font-size:14px;padding:12px;cursor:pointer}
+.abtn:disabled{opacity:.6;cursor:not-allowed}
+.aerr{background:rgba(255,68,68,.1);border:1px solid rgba(255,68,68,.3);border-radius:6px;padding:8px 12px;font-size:12px;color:var(--red);margin-top:10px;display:none}
+.aok{background:rgba(29,204,136,.1);border:1px solid rgba(29,204,136,.3);border-radius:6px;padding:8px 12px;font-size:12px;color:var(--green);margin-top:10px;display:none}
+.hdr{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--line);background:var(--bg);flex-shrink:0;position:sticky;top:0;z-index:95}
+.logo{font-family:'Orbitron',sans-serif;font-weight:800;font-size:20px;cursor:pointer}
+.logo span{color:var(--ora)}
+.bal-chip{background:var(--bg3);border:1px solid var(--line2);border-radius:6px;padding:5px 12px;font-size:12px;display:flex;align-items:center;gap:6px}
+.bal-amt{font-family:'Orbitron',sans-serif;font-weight:800;font-size:14px;color:var(--gold)}
+.logout{background:transparent;border:1px solid var(--line2);border-radius:5px;color:var(--muted);font-size:11px;font-family:'Exo 2',sans-serif;padding:5px 10px;cursor:pointer}
+.pages{flex:1;overflow:hidden;position:relative}
+.pg{position:absolute;inset:0;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;display:none;padding:16px 14px 80px}
+.pg.on{display:block}
+.bnav{display:flex;background:rgba(12,11,14,0.97);border-top:1px solid var(--line);flex-shrink:0;padding-bottom:env(safe-area-inset-bottom,0px)}
+.nb{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;padding:8px 4px;border:none;background:transparent;color:var(--dim);font-family:'Exo 2',sans-serif;font-size:10px;font-weight:500;cursor:pointer;min-height:52px}
+
+.nb.on{color:var(--ora)}
+.sec-title{font-family:'Orbitron',sans-serif;font-size:22px;font-weight:800;letter-spacing:-1px;margin-bottom:4px}
+.sec-title span{color:var(--mag)}
+.sec-sub{font-size:12px;color:var(--muted);margin-bottom:16px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.pc{background:var(--bg2);border:1px solid var(--line);border-radius:12px;overflow:hidden;transition:border-color .2s}
+.pc.owned{border-color:rgba(57,255,20,.4);box-shadow:0 0 12px rgba(57,255,20,0.1)}
+.pci{background:linear-gradient(145deg,#14121b,#1d1a26);height:130px;display:flex;align-items:center;justify-content:center;position:relative}
+.pc.owned .pci{background:linear-gradient(145deg,#1f0f1e,#2a1525)}
+.pci img{height:100px;width:auto;object-fit:contain;filter:drop-shadow(0 4px 12px rgba(0,0,0,.7))}
+.ptag{position:absolute;top:6px;left:6px;font-size:8px;font-weight:600;text-transform:uppercase;background:rgba(244,81,30,.18);border:1px solid rgba(244,81,30,.35);color:#FF6A3D;padding:2px 6px;border-radius:3px}
+.pob{position:absolute;bottom:6px;right:6px;background:rgba(0,0,0,0.75);color:#fff;font-size:10px;font-weight:700;padding:3px 8px;border-radius:6px;backdrop-filter:blur(4px)}
+.pcb{padding:10px 10px 12px}
+.pnm{font-family:'Orbitron',sans-serif;font-weight:700;font-size:13px;margin-bottom:1px}
+.pyr{font-size:9px;color:var(--dim);margin-bottom:8px}
+.prow{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--line);border:1px solid var(--line);border-radius:6px;overflow:hidden;margin-bottom:8px}
+.pst{background:var(--bg3);padding:6px 8px}
+.pst-l{font-size:8px;color:var(--dim);text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px}
+.pst-v{font-family:'Orbitron',sans-serif;font-weight:800;font-size:13px}
+.pst-v.g{color:#39FF14}
+.pclk{display:flex;align-items:center;gap:5px;background:rgba(245,200,66,.07);border:1px solid rgba(245,200,66,.2);border-radius:5px;padding:5px 7px;margin-bottom:7px;font-size:9px}
+.pclk-t{font-family:'Orbitron',sans-serif;font-weight:800;font-size:11px;color:var(--gold);margin-left:auto}
+.pclk-r{font-family:'Orbitron',sans-serif;font-weight:800;font-size:11px;color:var(--green);margin-left:auto}
+.dbar{margin-bottom:7px}
+.dbar-top{display:flex;justify-content:space-between;font-size:9px;color:var(--dim);margin-bottom:4px}
+.dbar-track{background:var(--bg3);border-radius:4px;height:5px;overflow:hidden}
+.dbar-fill{height:100%;border-radius:4px}
+.bbuy{width:100%;background:linear-gradient(135deg,#39FF14,#00CC10);border:none;border-radius:6px;color:#fff;font-family:'Exo 2',sans-serif;font-weight:600;font-size:12px;padding:8px;cursor:pointer}
+.bbuy:disabled{background:var(--bg3);color:var(--dim);cursor:not-allowed}
+.bal-card{background:var(--bg2);border:1px solid var(--line);border-radius:12px;padding:24px;text-align:center;margin-bottom:16px}
+.bal-lbl{font-size:11px;color:var(--dim);text-transform:uppercase;letter-spacing:.07em;margin-bottom:8px}
+.bal-big{font-family:'Orbitron',sans-serif;font-weight:700;font-size:44px;color:#39FF14;letter-spacing:-1px;text-shadow:0 0 20px rgba(57,255,20,0.4)}
+.cbtn{width:100%;background:transparent;border:1px solid var(--green);color:var(--green);font-family:'Exo 2',sans-serif;font-weight:600;font-size:13px;padding:10px;border-radius:8px;cursor:pointer;margin-bottom:16px}
+.empty{text-align:center;padding:40px 20px;color:var(--dim)}
+.gbtn{background:linear-gradient(135deg,#39FF14,#00CC10);border:none;border-radius:8px;color:#fff;font-family:'Exo 2',sans-serif;font-weight:600;font-size:14px;padding:12px 28px;cursor:pointer}
+.wcard{background:var(--bg2);border:1px solid var(--line);border-radius:12px;padding:20px;margin-bottom:14px;position:relative;overflow:hidden}
+.wcard::before{content:'';position:absolute;top:0;left:0;right:0;height:2px}
+.wcard.dep::before{background:linear-gradient(135deg,#39FF14,#00CC10)}
+.wcard.wdr::before{background:linear-gradient(135deg,#39FF14,#00CC10)}
+.wt{font-family:'Orbitron',sans-serif;font-weight:800;font-size:15px;margin-bottom:4px}
+.ws{font-size:12px;color:var(--muted);margin-bottom:14px;line-height:1.5}
+.wl{font-size:9px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--dim);margin-bottom:5px;margin-top:10px}
+.adrbox{background:var(--bg3);border:1px solid var(--line2);border-radius:7px;padding:10px 12px;display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.adrtxt{font-family:monospace;font-size:10px;flex:1;word-break:break-all;line-height:1.4}
+.cpbtn{background:var(--ora);border:none;border-radius:5px;color:#fff;font-size:11px;font-weight:600;padding:6px 10px;cursor:pointer;flex-shrink:0}
+.npill{display:inline-block;background:rgba(29,204,136,.1);border:1px solid rgba(29,204,136,.3);color:var(--green);font-size:11px;font-weight:700;padding:5px 12px;border-radius:5px;margin-bottom:10px}
+.wi{width:100%;background:var(--bg3);border:1px solid var(--line2);border-radius:7px;color:var(--text);font-family:'Exo 2',sans-serif;font-size:13px;padding:10px 12px;outline:none;margin-bottom:8px;transition:border-color .15s}
+.wi:focus{border-color:var(--ora)}
+.wi::placeholder{color:var(--dim)}
+.wbtn{width:100%;border:none;border-radius:7px;color:#fff;font-family:'Exo 2',sans-serif;font-weight:600;font-size:13px;padding:11px;cursor:pointer}
+.wbtn.ora{background:linear-gradient(135deg,#39FF14,#00CC10)}
+.wbtn.grn{background:linear-gradient(135deg,#39FF14,#00CC10);color:#000}
+.winf{background:rgba(245,200,66,.06);border:1px solid rgba(245,200,66,.2);border-radius:7px;padding:10px 12px;margin-top:10px;font-size:11px;color:var(--muted);line-height:1.55}
+.winf strong{color:var(--gold)}
+.txl{margin-top:20px}
+.txl-t{font-size:11px;font-weight:600;color:var(--muted);margin-bottom:10px;text-transform:uppercase;letter-spacing:.06em}
+.tx{display:flex;align-items:center;gap:8px;padding:10px 0;border-bottom:1px solid var(--line);font-size:11px}
+.tx:last-child{border:none}
+.tx-tp{font-size:8px;font-weight:700;padding:2px 6px;border-radius:3px;text-transform:uppercase;flex-shrink:0}
+.tx-tp.d{background:rgba(29,204,136,.12);color:var(--green)}
+.tx-tp.w{background:rgba(244,81,30,.12);color:var(--ora)}
+.tx-h{flex:1;color:var(--dim);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:monospace;font-size:10px}
+.tx-a{font-family:'Orbitron',sans-serif;font-weight:700;font-size:12px;flex-shrink:0}
+.tx-a.d{color:var(--green)}.tx-a.w{color:var(--ora)}
+.tx-s{font-size:8px;padding:2px 6px;border-radius:3px;flex-shrink:0}
+.tx-s.p{background:rgba(245,200,66,.12);color:var(--gold)}
+.tx-s.ok{background:rgba(29,204,136,.12);color:var(--green)}
+.tx-s.no{background:rgba(255,68,68,.12);color:var(--red)}
+.rstats{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
+.rst{background:var(--bg2);border:1px solid var(--line);border-radius:10px;padding:14px;text-align:center}
+.rst-l{font-size:9px;color:var(--dim);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px}
+.rst-v{font-family:'Orbitron',sans-serif;font-weight:800;font-size:24px}
+.rlvls{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:14px}
+.rlvl{background:var(--bg3);border-radius:8px;padding:10px;text-align:center}
+.rlvl-l{font-size:9px;font-weight:600;margin-bottom:3px}
+.rlvl-v{font-family:'Orbitron',sans-serif;font-weight:800;font-size:20px}
+.rlink{background:var(--bg2);border:1px solid var(--line2);border-radius:12px;padding:16px;margin-bottom:14px}
+.rlink-l{font-size:10px;color:var(--muted);margin-bottom:8px}
+.rlink-r{display:flex;gap:8px}
+.rlink-i{flex:1;background:var(--bg3);border:1px solid var(--line2);border-radius:6px;color:var(--text);font-family:monospace;font-size:10px;padding:8px 10px;outline:none}
+.rcbtn{background:var(--ora);border:none;border-radius:6px;color:#fff;font-weight:600;font-size:11px;padding:8px 14px;cursor:pointer;font-family:'Exo 2',sans-serif}
+.rlv{background:var(--bg2);border:1px solid var(--line);border-radius:12px;padding:16px;display:flex;align-items:center;gap:16px;margin-bottom:10px;position:relative;overflow:hidden}
+.rlv::before{content:'';position:absolute;top:0;left:0;bottom:0;width:3px}
+.rlv.l1::before{background:var(--ora)}.rlv.l2::before{background:#FF4D96}.rlv.l3::before{background:#B06EFF}
+.rlv-p{font-family:'Orbitron',sans-serif;font-weight:800;font-size:32px;flex-shrink:0}
+.l1 .rlv-p{color:var(--ora)}.l2 .rlv-p{color:#FF4D96}.l3 .rlv-p{color:#B06EFF}
+.rlv-t{font-size:9px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--dim);margin-bottom:3px}
+.rlv-d{font-size:12px;color:var(--muted);line-height:1.45}
+/* ADMIN */
+#admin-panel{position:fixed;inset:0;z-index:500;background:var(--bg);overflow-y:auto;display:none;padding:20px}
+.admin-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;padding-bottom:16px;border-bottom:1px solid var(--line)}
+.admin-badge{background:var(--purple);color:#fff;font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:4px 10px;border-radius:4px}
+.admin-close{background:transparent;border:1px solid var(--line2);border-radius:6px;color:var(--muted);font-size:12px;font-family:'Exo 2',sans-serif;padding:6px 14px;cursor:pointer}
+.kpis{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:24px}
+@media(min-width:600px){.kpis{grid-template-columns:repeat(4,1fr)}}
+.kpi{background:var(--bg2);border:1px solid var(--line);border-radius:10px;padding:16px}
+.kpi-l{font-size:9px;color:var(--dim);text-transform:uppercase;letter-spacing:.07em;margin-bottom:6px}
+.kpi-v{font-family:'Orbitron',sans-serif;font-weight:800;font-size:22px}
+.asec-title{font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--dim);margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid var(--line)}
+.atx{background:var(--bg2);border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:8px}
+.atx-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
+.atx-user{font-size:12px;font-weight:600}
+.atx-amt{font-family:'Orbitron',sans-serif;font-weight:800;font-size:16px}
+.atx-amt.dep{color:var(--green)}.atx-amt.wdr{color:var(--ora)}
+.atx-date{font-size:10px;color:var(--dim);margin-bottom:6px}
+.atx-hash{font-family:monospace;font-size:10px;color:var(--muted);word-break:break-all;background:var(--bg3);padding:6px 8px;border-radius:5px;margin-bottom:8px}
+.atx-status{font-size:9px;font-weight:700;padding:3px 8px;border-radius:4px;display:inline-block;margin-bottom:8px}
+.atx-status.pending{background:rgba(245,200,66,.12);color:var(--gold)}
+.atx-status.done{background:rgba(29,204,136,.12);color:var(--green)}
+.atx-status.rejected{background:rgba(255,68,68,.12);color:var(--red)}
+.atx-actions{display:flex;gap:8px}
+.btn-approve{flex:1;background:var(--green);border:none;border-radius:6px;color:#000;font-family:'Exo 2',sans-serif;font-weight:700;font-size:12px;padding:8px;cursor:pointer}
+.btn-reject{flex:1;background:transparent;border:1px solid var(--red);border-radius:6px;color:var(--red);font-family:'Exo 2',sans-serif;font-weight:600;font-size:12px;padding:8px;cursor:pointer}
+.auser{background:var(--bg2);border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:8px;cursor:pointer}
+.auser.selected{border-color:var(--purple)}
+.auser-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:4px}
+.auser-name{font-size:13px;font-weight:600}
+.auser-bal{font-family:'Orbitron',sans-serif;font-weight:800;font-size:14px;color:var(--gold)}
+.auser-email{font-size:11px;color:var(--muted)}
+.auser-actions{margin-top:10px;display:none;flex-direction:column;gap:8px}
+.auser.selected .auser-actions{display:flex}
+.manual-row{display:flex;gap:8px}
+.manual-row input{flex:1;background:var(--bg3);border:1px solid var(--line2);border-radius:6px;color:var(--text);font-family:'Exo 2',sans-serif;font-size:13px;padding:8px 10px;outline:none}
+.btn-manual{background:var(--purple);border:none;border-radius:6px;color:#fff;font-family:'Exo 2',sans-serif;font-weight:600;font-size:12px;padding:8px 14px;cursor:pointer}
+.btn-reset{width:100%;background:transparent;border:1px solid var(--red);border-radius:6px;color:var(--red);font-family:'Exo 2',sans-serif;font-weight:600;font-size:12px;padding:8px;cursor:pointer}
+.admin-tabs{display:flex;background:var(--bg3);border-radius:8px;padding:3px;margin-bottom:20px;gap:3px}
+.admin-tab{flex:1;padding:8px;text-align:center;border:none;background:transparent;color:var(--muted);font-family:'Exo 2',sans-serif;font-size:12px;cursor:pointer;border-radius:6px;transition:all .15s}
+.admin-tab.on{background:var(--bg2);color:var(--text)}
+.admin-section{display:none}
+.admin-section.on{display:block}
+#toast{position:fixed;bottom:70px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--bg2);border:1px solid var(--line2);color:var(--text);font-size:13px;font-weight:500;padding:10px 18px;border-radius:20px;box-shadow:0 4px 20px rgba(0,0,0,.5);opacity:0;transition:all .25s;pointer-events:none;white-space:nowrap;z-index:9999;max-width:90vw;text-align:center}
+#toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
+
+</style>
+</head>
+<body>
+<div id="toast"></div>
+
+
+<div id="auth">
+  <div class="abox">
+    <div style="text-align:center;margin-bottom:16px"><img src="https://raw.githubusercontent.com/aljimen3z-glitch/Roi-Apple/main/logo.jpg" style="width:80px;height:80px;border-radius:20px;object-fit:cover;box-shadow:0 4px 16px rgba(0,0,0,0.12)"></div><div class="alogo" style="font-family:'Inter',sans-serif;font-weight:700;font-size:24px;text-align:center;letter-spacing:-.5px">Roi<span style="color:var(--blue)">Apple</span></div>
+    <div class="asub">Invierte en iPhones y gana cada día</div>
+    <div class="atabs">
+      <button class="atab on" onclick="switchTab('login',this)">Iniciar sesión</button>
+      <button class="atab" onclick="switchTab('register',this)">Registrarse</button>
+    </div>
+    <div id="tab-login">
+      <div class="flbl">Correo</div>
+      <input class="fi" id="l-email" type="email" placeholder="tucorreo@gmail.com">
+      <div class="flbl">Contraseña</div>
+      <input class="fi" id="l-pass" type="password" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()">
+      <button class="abtn" id="l-btn" onclick="doLogin()">Entrar</button>
+      <div style="text-align:center;margin-top:12px">
+        <span onclick="showForgot()" style="font-size:12px;color:var(--muted);cursor:pointer;text-decoration:underline">¿Olvidaste tu contraseña?</span>
+      </div>
+      <div class="aerr" id="l-err"></div>
+      <!-- FORGOT PASSWORD -->
+      <div id="forgot-box" style="display:none;margin-top:16px;background:var(--bg3);border:1px solid var(--line2);border-radius:10px;padding:16px">
+        <div style="font-size:12px;color:var(--muted);margin-bottom:8px">Escribe tu correo y te enviaremos un enlace para restablecer tu contraseña.</div>
+        <input class="fi" id="f-email" type="email" placeholder="tucorreo@gmail.com">
+        <button class="abtn" id="f-btn" onclick="doForgot()" style="margin-top:10px">Enviar enlace</button>
+        <div class="aerr" id="f-err"></div>
+        <div class="aok" id="f-ok"></div>
+      </div>
+    </div>
+    <div id="tab-register" style="display:none">
+      <div class="flbl">Nombre completo</div>
+      <input class="fi" id="r-name" type="text" placeholder="Tu nombre">
+      <div class="flbl">Correo</div>
+      <input class="fi" id="r-email" type="email" placeholder="tucorreo@gmail.com">
+      <div class="flbl">Contraseña</div>
+      <input class="fi" id="r-pass" type="password" placeholder="Mínimo 6 caracteres">
+      <div class="flbl">Confirmar contraseña</div>
+      <input class="fi" id="r-pass2" type="password" placeholder="Repite tu contraseña" onkeydown="if(event.key==='Enter')doRegister()">
+      <button class="abtn" id="r-btn" onclick="doRegister()">Crear cuenta</button>
+      <div class="aerr" id="r-err"></div>
+      <div class="aok" id="r-ok"></div>
+    </div>
+  </div>
+</div>
+<div id="admin-panel">
+  <div class="admin-hdr">
+    <div style="display:flex;align-items:center;gap:10px">
+      <div class="admin-badge">Admin</div>
+      <div style="font-family:'Orbitron',sans-serif;font-weight:800;font-size:16px">Panel RoiApple</div>
+    </div>
+    <button class="admin-close" onclick="closeAdmin()">← Cerrar</button>
+  </div>
+  <div class="kpis">
+    <div class="kpi"><div class="kpi-l">Usuarios</div><div class="kpi-v" id="k-users" style="color:var(--purple)">-</div></div>
+    <div class="kpi"><div class="kpi-l">Balance total</div><div class="kpi-v" id="k-bal" style="color:var(--gold)">-</div></div>
+    <div class="kpi"><div class="kpi-l">Recargas pend.</div><div class="kpi-v" id="k-deps" style="color:var(--green)">-</div></div>
+    <div class="kpi"><div class="kpi-l">Retiros pend.</div><div class="kpi-v" id="k-wdrs" style="color:var(--ora)">-</div></div>
+  </div>
+  <div class="admin-tabs">
+    <button class="admin-tab on" onclick="adminTab('deposits',this)">💰 Recargas</button>
+    <button class="admin-tab" onclick="adminTab('withdrawals',this)">🏧 Retiros</button>
+    <button class="admin-tab" onclick="adminTab('users',this)">👥 Usuarios</button>
+    <button class="admin-tab" onclick="adminTab('videos',this)">🎬 Videos</button>
+  </div>
+  <div class="admin-section on" id="as-deposits">
+    <div class="asec-title">Solicitudes de depósito</div>
+    <div id="admin-deps-list"></div>
+  </div>
+  <div class="admin-section" id="as-withdrawals">
+    <div class="asec-title">Solicitudes de retiro</div>
+    <div id="admin-wdrs-list"></div>
+  </div>
+  <div class="admin-section" id="as-users">
+    <div class="asec-title">Usuarios registrados</div>
+    <div id="admin-users-list"></div>
+  </div>
+  <div class="admin-section" id="as-videos">
+    <div class="asec-title">Videos enviados</div>
+    <div id="admin-videos-list"><div style="color:var(--dim);padding:16px 0">Cargando...</div></div>
+  </div>
+</div>
+<div class="hdr">
+  <div style="display:flex;align-items:center;gap:8px"><img src="https://raw.githubusercontent.com/aljimen3z-glitch/Roi-Apple/main/logo.jpg" style="width:28px;height:28px;border-radius:7px;object-fit:cover"><div class="logo" ondblclick="openAdmin()" style="font-family:'Orbitron',sans-serif;font-weight:400;letter-spacing:-0.5px">Roi<span>Apple</span></div></div>
+  <div style="display:flex;align-items:center;gap:8px">
+
+    <div class="bal-chip"><span style="font-size:10px;color:var(--dim)">Balance</span><span class="bal-amt" id="hbal">$0.00</span></div>
+    <a href="https://t.me/Roiapple" target="_blank" style="background:transparent;border:1px solid var(--line2);border-radius:5px;color:var(--muted);font-size:11px;font-family:'Exo 2',sans-serif;padding:5px 10px;cursor:pointer;text-decoration:none">💬 Soporte</a>
+    <button class="logout" onclick="doLogout()">Salir</button>
+  </div>
+</div>
+<div class="pages">
+  <div class="pg on" id="pg-home">
+    <div class="bal-card">
+      <div class="bal-lbl">Balance disponible</div>
+      <div class="bal-big" id="sb">$0.00</div>
+    </div>
+    <button id="collect-all-btn" onclick="collectAll()" style="width:100%;background:var(--green);border:none;border-radius:14px;color:#000;font-family:'Inter',sans-serif;font-weight:700;font-size:15px;padding:14px;cursor:pointer;margin-bottom:8px">💰 Cobrar todas las ganancias</button>
+    <div id="collect-timer" style="font-size:12px;color:var(--muted);text-align:center;margin-bottom:16px"></div>
+
+    <div id="home-empty" class="empty" style="display:none">
+      <div style="font-size:48px;margin-bottom:12px">📱</div>
+      <div style="margin-bottom:16px">Aún no tienes iPhones</div>
+      <button class="gbtn" onclick="nav('catalog')">Ver catálogo</button>
+    </div>
+    <div class="grid" id="my-grid"></div>
+  </div>
+  <div class="pg" id="pg-catalog">
+    <div class="sec-title">Catálogo <span>completo</span></div>
+    <div class="sec-sub">4% diario · recuperas tu inversión en 25 días</div>
+    <div class="grid" id="cat-grid"></div>
+  </div>
+  <div class="pg" id="pg-wallet">
+    <div class="wcard dep">
+      <div class="wt">Recargar saldo</div>
+      <div class="ws">Envía USDT BEP-20 y confirma con el hash.</div>
+      <div class="npill">BEP-20 (Binance Smart Chain)</div>
+      <div class="wl" style="margin-top:0">Dirección de recarga</div>
+      <div class="adrbox">
+        <div class="adrtxt">0x264925CA49fd89c54E8413264eAB91b8eE686E3d</div>
+        <button class="cpbtn" onclick="copyTxt('0x264925CA49fd89c54E8413264eAB91b8eE686E3d')">Copiar</button>
+      </div>
+      <div class="wl">Hash de tu transacción</div>
+      <input class="wi" id="hash-i" type="text" placeholder="0x... pega el hash aquí">
+      <div class="wl">Monto enviado (USDT)</div>
+      <input class="wi" id="amt-i" type="number" min="1" step="0.01" placeholder="Ej: 50.00">
+      <button class="wbtn ora" onclick="doRecharge()">Confirmar recarga</button>
+      <div class="winf"><strong>Tiempo:</strong> 1 a 3 horas. Solo BEP-20.</div>
+    </div>
+    <div class="wcard wdr">
+      <div class="wt">Retirar ganancias</div>
+      <div class="ws">Mínimo <strong style="color:var(--green)">$5.00</strong> · 5% comisión · BEP-20 · 24-48h</div>
+      <div class="wl" style="margin-top:0">Tu wallet BEP-20</div>
+      <input class="wi" id="wdr-w" type="text" placeholder="0x... tu dirección BEP-20">
+      <div class="wl">Monto a retirar</div>
+      <input class="wi" id="wdr-a" type="number" min="5" step="0.01" placeholder="Mínimo $5.00">
+      <button class="wbtn grn" onclick="doWithdraw()">Solicitar retiro</button>
+      <div class="winf" style="background:rgba(29,204,136,.05);border-color:rgba(29,204,136,.2)">
+        Balance disponible: <strong style="color:var(--green)" id="wbal">$0.00</strong>
+      </div>
+    </div>
+    <div class="txl">
+      <div class="txl-t">Historial</div>
+      <div id="txs"><div style="color:var(--dim);font-size:13px;padding:10px 0">Sin transacciones.</div></div>
+    </div>
+  </div>
+  <div class="pg" id="pg-ref">
+    <div class="sec-title">Programa de <span>Referidos</span></div>
+    <div class="sec-sub">Gana comisiones cuando tu red compra iPhones</div>
+    <div class="rstats">
+      <div class="rst"><div class="rst-l">Total referidos</div><div class="rst-v" style="color:var(--ora)" id="r-tot">0</div></div>
+      <div class="rst"><div class="rst-l">Total ganado</div><div class="rst-v" style="color:var(--green)" id="r-earn">$0.00</div></div>
+    </div>
+    <div class="rlvls">
+      <div class="rlvl"><div class="rlvl-l" style="color:var(--ora)">NIVEL 1</div><div class="rlvl-v" id="r-l1">0</div></div>
+      <div class="rlvl"><div class="rlvl-l" style="color:#FF4D96">NIVEL 2</div><div class="rlvl-v" id="r-l2">0</div></div>
+      <div class="rlvl"><div class="rlvl-l" style="color:#B06EFF">NIVEL 3</div><div class="rlvl-v" id="r-l3">0</div></div>
+    </div>
+    <div class="rlink">
+      <div class="rlink-l">Tu enlace de referido</div>
+      <div class="rlink-r">
+        <input class="rlink-i" id="ref-link" readonly>
+        <button class="rcbtn" onclick="copyTxt(document.getElementById('ref-link').value)">Copiar</button>
+      </div>
+    </div>
+    <div class="rlv l1"><div class="rlv-p">8%</div><div><div class="rlv-t">Nivel 1 — Directo</div><div class="rlv-d">De cada compra de quien invitaste directamente</div></div></div>
+    <div class="rlv l2"><div class="rlv-p">4%</div><div><div class="rlv-t">Nivel 2 — Indirecto</div><div class="rlv-d">De las compras de la red de tus referidos</div></div></div>
+    <div class="rlv l3"><div class="rlv-p">2%</div><div><div class="rlv-t">Nivel 3 — Red</div><div class="rlv-d">Del tercer nivel de profundidad de tu red</div></div></div>
+  </div>
+
+  <div class="pg" id="pg-premios">
+    <div class="sec-title">Premios</div>
+    <div class="sec-sub">Gana dinero extra promocionando RoiApple</div>
+    <div style="background:linear-gradient(135deg,#1a1a2e,#16213e,#0f3460);border-radius:20px;padding:22px;margin-bottom:16px">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+        <span style="font-size:24px">🎬</span>
+        <div style="font-size:17px;font-weight:700;color:#fff">Premio por Videos</div>
+        <span style="background:#FF3B30;color:#fff;font-size:10px;font-weight:700;padding:3px 8px;border-radius:20px">NUEVO</span>
+      </div>
+      <div style="font-size:13px;color:rgba(255,255,255,0.65);margin-bottom:18px;line-height:1.6">Publica un video sobre RoiApple y gana <strong style="color:#FFD60A">$3.00</strong> cuando llegue a <strong style="color:#FFD60A">100 vistas</strong>.</div>
+      <div style="display:flex;gap:8px;margin-bottom:18px;flex-wrap:wrap">
+        <div style="display:flex;align-items:center;gap:6px;background:rgba(255,255,255,0.08);border-radius:10px;padding:8px 12px"><svg width="18" height="18" viewBox="0 0 24 24" fill="#FF0000"><path d="M23.495 6.205a3.007 3.007 0 0 0-2.088-2.088c-1.87-.501-9.396-.501-9.396-.501s-7.507-.01-9.396.501A3.007 3.007 0 0 0 .527 6.205a31.247 31.247 0 0 0-.522 5.805 31.247 31.247 0 0 0 .522 5.783 3.007 3.007 0 0 0 2.088 2.088c1.868.502 9.396.502 9.396.502s7.506 0 9.396-.502a3.007 3.007 0 0 0 2.088-2.088 31.247 31.247 0 0 0 .5-5.783 31.247 31.247 0 0 0-.5-5.805zM9.609 15.601V8.408l6.264 3.602z"/></svg><span style="font-size:12px;font-weight:600;color:#fff">YouTube</span></div>
+        <div style="display:flex;align-items:center;gap:6px;background:rgba(255,255,255,0.08);border-radius:10px;padding:8px 12px"><svg width="18" height="18" viewBox="0 0 24 24" fill="#fff"><path d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.19-3.44-3.37-3.65-5.71-.02-.5-.03-1-.01-1.49.18-1.9 1.12-3.72 2.58-4.96 1.66-1.44 3.98-2.13 6.15-1.72.02 1.48-.04 2.96-.04 4.44-.99-.32-2.15-.23-3.02.37-.63.41-1.11 1.04-1.36 1.75-.21.51-.15 1.07-.14 1.61.24 1.64 1.82 3.02 3.5 2.87 1.12-.01 2.19-.66 2.77-1.61.19-.33.4-.67.41-1.06.1-1.79.06-3.57.07-5.36.01-4.03-.01-8.05.02-12.07z"/></svg><span style="font-size:12px;font-weight:600;color:#fff">TikTok</span></div>
+        <div style="display:flex;align-items:center;gap:6px;background:rgba(255,255,255,0.08);border-radius:10px;padding:8px 12px"><svg width="18" height="18" viewBox="0 0 24 24" fill="#1877F2"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg><span style="font-size:12px;font-weight:600;color:#fff">Facebook</span></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:18px">
+        <div style="background:rgba(255,255,255,0.06);border-radius:12px;padding:12px;text-align:center"><div style="font-size:22px;margin-bottom:4px">📹</div><div style="font-size:11px;font-weight:700;color:#fff;margin-bottom:2px">1. Graba</div><div style="font-size:10px;color:rgba(255,255,255,0.5)">Un video sobre RoiApple</div></div>
+        <div style="background:rgba(255,255,255,0.06);border-radius:12px;padding:12px;text-align:center"><div style="font-size:22px;margin-bottom:4px">🔗</div><div style="font-size:11px;font-weight:700;color:#fff;margin-bottom:2px">2. Envía</div><div style="font-size:10px;color:rgba(255,255,255,0.5)">El link aquí abajo</div></div>
+        <div style="background:rgba(255,255,255,0.06);border-radius:12px;padding:12px;text-align:center"><div style="font-size:22px;margin-bottom:4px">💰</div><div style="font-size:11px;font-weight:700;color:#fff;margin-bottom:2px">3. Cobra</div><div style="font-size:10px;color:rgba(255,255,255,0.5)">$3 a las 100 vistas</div></div>
+      </div>
+      <div style="background:rgba(255,255,255,0.06);border-radius:14px;padding:16px">
+        <div style="font-size:11px;font-weight:600;color:rgba(255,255,255,0.6);margin-bottom:8px;text-transform:uppercase;letter-spacing:.05em">Link de tu video</div>
+        <input id="video-url" type="url" placeholder="https://youtube.com/... o tiktok.com/..." style="width:100%;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.15);border-radius:10px;color:#fff;font-family:Inter,sans-serif;font-size:13px;padding:11px 14px;outline:none;margin-bottom:10px">
+        <button onclick="submitVideo()" style="width:100%;background:linear-gradient(135deg,#FFD60A,#FF9F0A);border:none;border-radius:12px;color:#000;font-family:Inter,sans-serif;font-weight:700;font-size:14px;padding:13px;cursor:pointer">🎬 Enviar video para revisión</button>
+        <div id="video-msg" style="display:none;margin-top:10px;font-size:13px;text-align:center;padding:10px;border-radius:10px"></div>
+      </div>
+      <div style="margin-top:12px;font-size:11px;color:rgba(255,255,255,0.4);text-align:center">El equipo verifica y acredita el premio en 24–48 horas</div>
+    </div>
+    <div style="font-size:16px;font-weight:700;margin-bottom:12px">Mis videos enviados</div>
+    <div id="my-videos"><div style="color:var(--dim);font-size:13px;padding:8px 0">Sin videos enviados aún.</div></div>
+  </div>
+
+  <div class="pg" id="pg-info">
+    <div class="sec-title">Información</div>
+    <div class="sec-sub">Cómo funciona, preguntas y términos</div>
+    <div style="background:var(--bg2);border:1px solid var(--line2);border-radius:20px;padding:20px;margin-bottom:14px">
+      <div style="font-size:16px;font-weight:700;margin-bottom:16px;color:var(--text)">¿Cómo funciona?</div>
+      <div style="display:flex;flex-direction:column;gap:12px">
+        <div style="display:flex;gap:14px;align-items:flex-start"><div style="width:32px;height:32px;background:var(--bg3);border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0">💳</div><div><div style="font-size:14px;font-weight:600;margin-bottom:2px">1. Recarga USDT</div><div style="font-size:13px;color:var(--muted);line-height:1.5">Envía USDT BEP-20 y confirma con el hash. Mínimo $5.00.</div></div></div>
+        <div style="display:flex;gap:14px;align-items:flex-start"><div style="width:32px;height:32px;background:var(--bg3);border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0">📱</div><div><div style="font-size:14px;font-weight:600;margin-bottom:2px">2. Compra tu iPhone</div><div style="font-size:13px;color:var(--muted);line-height:1.5">21 modelos desde $5. Cada uno genera 4% diario.</div></div></div>
+        <div style="display:flex;gap:14px;align-items:flex-start"><div style="width:32px;height:32px;background:var(--bg3);border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0">💰</div><div><div style="font-size:14px;font-weight:600;margin-bottom:2px">3. Cobra cada 24 horas</div><div style="font-size:13px;color:var(--muted);line-height:1.5">Cobras cuando quieras desde Inicio.</div></div></div>
+        <div style="display:flex;gap:14px;align-items:flex-start"><div style="width:32px;height:32px;background:var(--bg3);border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0">👥</div><div><div style="font-size:14px;font-weight:600;margin-bottom:2px">4. Refiere y gana más</div><div style="font-size:13px;color:var(--muted);line-height:1.5">8% nivel 1 · 4% nivel 2 · 2% nivel 3.</div></div></div>
+      </div>
+    </div>
+    <div style="font-size:16px;font-weight:700;margin-bottom:12px">Preguntas frecuentes</div>
+    <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px">
+      <details style="background:var(--bg2);border:1px solid var(--line2);border-radius:14px;padding:16px;cursor:pointer"><summary style="font-size:14px;font-weight:600;list-style:none;display:flex;justify-content:space-between;color:var(--text)">¿Cómo recargo mi saldo? <span style="color:var(--blue)">+</span></summary><p style="font-size:13px;color:var(--muted);margin-top:10px;line-height:1.6">Envía USDT BEP-20. Copia el hash y pégalo en Billetera. Se acredita en 1–3 horas.</p></details>
+      <details style="background:var(--bg2);border:1px solid var(--line2);border-radius:14px;padding:16px;cursor:pointer"><summary style="font-size:14px;font-weight:600;list-style:none;display:flex;justify-content:space-between;color:var(--text)">¿Cuándo puedo retirar? <span style="color:var(--blue)">+</span></summary><p style="font-size:13px;color:var(--muted);margin-top:10px;line-height:1.6">Cuando quieras. Mínimo $5.00, comisión 5%, procesado en 24–48 horas.</p></details>
+      <details style="background:var(--bg2);border:1px solid var(--line2);border-radius:14px;padding:16px;cursor:pointer"><summary style="font-size:14px;font-weight:600;list-style:none;display:flex;justify-content:space-between;color:var(--text)">¿Qué pasa cuando expira un iPhone? <span style="color:var(--blue)">+</span></summary><p style="font-size:13px;color:var(--muted);margin-top:10px;line-height:1.6">Cada iPhone dura 65 días. Al expirar deja de generar ganancias.</p></details>
+      <details style="background:var(--bg2);border:1px solid var(--line2);border-radius:14px;padding:16px;cursor:pointer"><summary style="font-size:14px;font-weight:600;list-style:none;display:flex;justify-content:space-between;color:var(--text)">¿Cómo funcionan los referidos? <span style="color:var(--blue)">+</span></summary><p style="font-size:13px;color:var(--muted);margin-top:10px;line-height:1.6">Comparte tu enlace. Ganas 8% (nivel 1), 4% (nivel 2) y 2% (nivel 3) de cada compra.</p></details>
+      <details style="background:var(--bg2);border:1px solid var(--line2);border-radius:14px;padding:16px;cursor:pointer"><summary style="font-size:14px;font-weight:600;list-style:none;display:flex;justify-content:space-between;color:var(--text)">¿Cuál es el mínimo de recarga? <span style="color:var(--blue)">+</span></summary><p style="font-size:13px;color:var(--muted);margin-top:10px;line-height:1.6">$5.00 USDT en red BEP-20 únicamente.</p></details>
+      <details style="background:var(--bg2);border:1px solid var(--line2);border-radius:14px;padding:16px;cursor:pointer"><summary style="font-size:14px;font-weight:600;list-style:none;display:flex;justify-content:space-between;color:var(--text)">¿Es seguro? <span style="color:var(--blue)">+</span></summary><p style="font-size:13px;color:var(--muted);margin-top:10px;line-height:1.6">Sí. Los retiros se procesan manualmente. Soporte oficial: <a href="https://t.me/Roiapple" style="color:var(--blue)">@Roiapple en Telegram</a>.</p></details>
+    </div>
+    <div style="font-size:16px;font-weight:700;margin-bottom:12px">Términos y condiciones</div>
+    <div style="background:var(--bg2);border:1px solid var(--line2);border-radius:14px;padding:18px;font-size:13px;color:var(--muted);line-height:1.8;margin-bottom:14px">
+      <p style="margin-bottom:10px"><strong style="color:var(--text)">1. Servicio.</strong> RoiApple es una plataforma de inversión virtual con iPhones que generan 4% diario durante 65 días.</p>
+      <p style="margin-bottom:10px"><strong style="color:var(--text)">2. Rendimientos.</strong> El 4% diario se cobra manualmente cada 24 horas.</p>
+      <p style="margin-bottom:10px"><strong style="color:var(--text)">3. Recargas.</strong> Solo USDT BEP-20. Mínimo $5.00.</p>
+      <p style="margin-bottom:10px"><strong style="color:var(--text)">4. Retiros.</strong> Mínimo $5.00, comisión 5%, 24–48 horas hábiles.</p>
+      <p style="margin-bottom:10px"><strong style="color:var(--text)">5. Expiración.</strong> Cada iPhone dura 65 días. No es reembolsable.</p>
+      <p style="margin-bottom:10px"><strong style="color:var(--text)">6. Referidos.</strong> Comisiones 8%, 4% y 2% por compras de tu red.</p>
+      <p><strong style="color:var(--text)">7. Riesgo.</strong> El usuario es responsable de sus decisiones de inversión.</p>
+    </div>
+    <a href="https://t.me/Roiapple" target="_blank" style="display:flex;align-items:center;gap:12px;background:var(--bg2);border:1px solid var(--line2);border-radius:14px;padding:16px;text-decoration:none;color:var(--text)">
+      <div style="width:40px;height:40px;background:var(--bg3);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:20px">💬</div>
+      <div><div style="font-size:14px;font-weight:600">Soporte oficial</div><div style="font-size:13px;color:var(--blue)">@Roiapple en Telegram</div></div>
+      <div style="margin-left:auto;color:var(--dim)">→</div>
+    </a>
+  </div>
+
+</div>
+
+<div class="bnav">
+  <button class="nb on" id="nb-home" onclick="nav('home')">
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+    Inicio
+  </button>
+  <button class="nb" id="nb-catalog" onclick="nav('catalog')">
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
+    Catálogo
+  </button>
+  <button class="nb" id="nb-wallet" onclick="nav('wallet')">
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+    Billetera
+  </button>
+  <button class="nb" id="nb-ref" onclick="nav('ref')">
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+    Referidos
+  </button>
+  <button class="nb" id="nb-premios" onclick="nav('premios')">
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="6"/><path d="M15.477 12.89L17 22l-5-3-5 3 1.523-9.11"/></svg>
+    Premios
+  </button>
+  <button class="nb" id="nb-info" onclick="nav('info')">
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+    Info
+  </button>
+</div>
+<script>
+const SURL='https://hijwrizemmjjhgnrvilk.supabase.co';
+const SKEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhpandyaXplbW1qamhnbnJ2aWxrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM5NTA2ODcsImV4cCI6MjA5OTUyNjY4N30.JNiFA1uiunrs7EICf0YASHWVvg-n8Sc_riyt7yd9ibM';
+const ADMIN_EMAIL='aljimen3z@gmail.com';
+const {createClient}=supabase;
+const sb=createClient(SURL,SKEY,{
+  auth:{
+    persistSession:true,
+    autoRefreshToken:true,
+    detectSessionInUrl:true,
+    storage:window.localStorage,
+    storageKey:'roiapple-session',
+    flowType:'implicit'
+  }
+});
+const PH=[
+  {id:'2g',name:'iPhone 2G',year:2007,price:5,img:'https://fdn2.gsmarena.com/vv/bigpic/apple-iphone-3gs.jpg'},
+  {id:'3g',name:'iPhone 3G',year:2008,price:6,img:'https://fdn2.gsmarena.com/vv/bigpic/apple-iphone-3gs.jpg'},
+  {id:'3gs',name:'iPhone 3GS',year:2009,price:7,img:'https://fdn2.gsmarena.com/vv/bigpic/apple-iphone-3gs.jpg'},
+  {id:'4',name:'iPhone 4',year:2010,price:9,img:'https://fdn2.gsmarena.com/vv/bigpic/apple-iphone-4.jpg'},
+  {id:'4s',name:'iPhone 4S',year:2011,price:11,img:'https://fdn2.gsmarena.com/vv/bigpic/apple-iphone-4s.jpg'},
+  {id:'5',name:'iPhone 5',year:2012,price:13,img:'https://fdn2.gsmarena.com/vv/bigpic/apple-iphone-5.jpg'},
+  {id:'5s',name:'iPhone 5S',year:2013,price:16,img:'https://fdn2.gsmarena.com/vv/bigpic/apple-iphone-5s.jpg'},
+  {id:'6',name:'iPhone 6',year:2014,price:20,img:'https://fdn2.gsmarena.com/vv/bigpic/apple-iphone-6s.jpg'},
+  {id:'6s',name:'iPhone 6S',year:2015,price:25,img:'https://fdn2.gsmarena.com/vv/bigpic/apple-iphone-6s.jpg'},
+  {id:'7',name:'iPhone 7',year:2016,price:30,img:'https://fdn2.gsmarena.com/vv/bigpic/apple-iphone-8.jpg'},
+  {id:'8',name:'iPhone 8',year:2017,price:37,img:'https://fdn2.gsmarena.com/vv/bigpic/apple-iphone-8.jpg'},
+  {id:'x',name:'iPhone X',year:2017,price:45,img:'https://fdn2.gsmarena.com/vv/bigpic/apple-iphone-x.jpg'},
+  {id:'xr',name:'iPhone XR',year:2018,price:55,img:'https://fdn2.gsmarena.com/vv/bigpic/apple-iphone-xr.jpg'},
+  {id:'xs',name:'iPhone XS',year:2018,price:67,img:'https://fdn2.gsmarena.com/vv/bigpic/apple-iphone-xs.jpg'},
+  {id:'11',name:'iPhone 11',year:2019,price:80,img:'https://fdn2.gsmarena.com/vv/bigpic/apple-iphone-11.jpg'},
+  {id:'12',name:'iPhone 12',year:2020,price:97,img:'https://fdn2.gsmarena.com/vv/bigpic/apple-iphone-12.jpg'},
+  {id:'13',name:'iPhone 13',year:2021,price:117,img:'https://fdn2.gsmarena.com/vv/bigpic/apple-iphone-13.jpg'},
+  {id:'14',name:'iPhone 14',year:2022,price:140,img:'https://fdn2.gsmarena.com/vv/bigpic/apple-iphone-14.jpg'},
+  {id:'15',name:'iPhone 15',year:2023,price:167,img:'https://fdn2.gsmarena.com/vv/bigpic/apple-iphone-15.jpg'},
+  {id:'16',name:'iPhone 16',year:2024,price:200,img:'https://fdn2.gsmarena.com/vv/bigpic/apple-iphone-16.jpg'},
+  {id:'17',name:'iPhone 17',year:2025,price:240,img:'https://fdn2.gsmarena.com/vv/bigpic/apple-iphone-17.jpg'},
+];
+PH.forEach(p=>p.daily=parseFloat((p.price/25).toFixed(4)));
+let USER=null,PROFILE=null;
+const f=n=>'$'+Math.abs(n).toFixed(2);
+const fCD=ms=>{if(ms<=0)return null;const s=Math.floor(ms/1000),h=Math.floor(s/3600),m=Math.floor((s%3600)/60),sc=s%60;return String(h).padStart(2,'0')+':'+String(m).padStart(2,'0')+':'+String(sc).padStart(2,'0');};
+let toastT;
+function toast(msg){const el=document.getElementById('toast');el.textContent=msg;el.classList.add('on');clearTimeout(toastT);toastT=setTimeout(()=>el.classList.remove('on'),3000);}
+function copyTxt(t){navigator.clipboard.writeText(t).then(()=>toast('Copiado')).catch(()=>toast('Copiado'));}
+function switchTab(tab,btn){
+  document.querySelectorAll('.atab').forEach(b=>b.classList.remove('on'));btn.classList.add('on');
+  document.getElementById('tab-login').style.display=tab==='login'?'block':'none';
+  document.getElementById('tab-register').style.display=tab==='register'?'block':'none';
+}
+function showForgot(){
+  const box=document.getElementById('forgot-box');
+  box.style.display=box.style.display==='none'?'block':'none';
+}
+async function doForgot(){
+  const email=document.getElementById('f-email').value.trim().toLowerCase();
+  const err=document.getElementById('f-err');const ok=document.getElementById('f-ok');
+  err.style.display='none';ok.style.display='none';
+  if(!email||!email.includes('@')){err.textContent='Correo inválido.';err.style.display='block';return;}
+  const btn=document.getElementById('f-btn');btn.disabled=true;btn.textContent='Enviando...';
+  const {error}=await sb.auth.resetPasswordForEmail(email,{redirectTo:'https://roiapple.org'});
+  if(error){err.textContent=error.message;err.style.display='block';}
+  else{ok.textContent='Enlace enviado. Revisa tu correo.';ok.style.display='block';}
+  btn.disabled=false;btn.textContent='Enviar enlace';
+}
+async function doLogin(){
+  const email=document.getElementById('l-email').value.trim().toLowerCase();
+  const pass=document.getElementById('l-pass').value;
+  const err=document.getElementById('l-err');err.style.display='none';
+  const btn=document.getElementById('l-btn');btn.disabled=true;btn.textContent='Entrando...';
+  const {data,error}=await sb.auth.signInWithPassword({email,password:pass});
+  if(error){err.textContent=error.message.includes('Invalid')?'Correo o contraseña incorrectos':error.message;err.style.display='block';btn.disabled=false;btn.textContent='Entrar';return;}
+  USER=data.user;await loadProfile();
+  document.getElementById('auth').style.display='none';
+  document.querySelector('.hdr').style.display='flex';
+  document.querySelector('.bnav').style.display='flex';
+  initApp();
+}
+async function doRegister(){
+  const name=document.getElementById('r-name').value.trim();
+  const email=document.getElementById('r-email').value.trim().toLowerCase();
+  const pass=document.getElementById('r-pass').value;
+  const pass2=document.getElementById('r-pass2').value;
+  const err=document.getElementById('r-err'),ok=document.getElementById('r-ok');
+  err.style.display='none';ok.style.display='none';
+  if(!name||!email||!pass||!pass2){err.textContent='Completa todos los campos.';err.style.display='block';return;}
+  if(!email.includes('@')){err.textContent='Correo inválido.';err.style.display='block';return;}
+  if(pass.length<6){err.textContent='Mínimo 6 caracteres.';err.style.display='block';return;}
+  if(pass!==pass2){err.textContent='Las contraseñas no coinciden.';err.style.display='block';return;}
+  const btn=document.getElementById('r-btn');btn.disabled=true;btn.textContent='Creando...';
+  const urlP=new URLSearchParams(window.location.search);
+  const refCode=urlP.get('ref')||null;
+  const {data,error}=await sb.auth.signUp({email,password:pass,options:{data:{name}}});
+  if(error){err.textContent=error.message;err.style.display='block';btn.disabled=false;btn.textContent='Crear cuenta';return;}
+  // Use Edge Function to create user safely (no service_role key exposed)
+  const efRes=await fetch('https://hijwrizemmjjhgnrvilk.supabase.co/functions/v1/swift-action',{
+    method:'POST',
+    headers:{'Content-Type':'application/json','Authorization':'Bearer '+SKEY},
+    body:JSON.stringify({ref_code:refCode,new_user_id:data.user.id,name,email})
+  });
+  const efData=await efRes.json();
+  const e2=efData.ok?null:{message:efData.error};
+  if(e2){err.textContent='Error: '+e2.message;err.style.display='block';btn.disabled=false;btn.textContent='Crear cuenta';return;}
+  ok.textContent='Cuenta creada. Ahora inicia sesión.';ok.style.display='block';
+  btn.disabled=false;btn.textContent='Crear cuenta';
+  setTimeout(()=>switchTab('login',document.querySelector('.atab')),1500);
+}
+async function doLogout(){await sb.auth.signOut();location.reload();}
+async function loadProfile(){
+  if(!USER)return;
+  const {data}=await sb.from('users').select('*').eq('id',USER.id).single();
+  if(data)PROFILE=data;
+  const {data:txs}=await sb.from('transactions').select('*').eq('user_id',USER.id).order('created_at',{ascending:false}).limit(20);
+  if(PROFILE)PROFILE.txs=txs||[];
+  const {count:c1}=await sb.from('users').select('id',{count:'exact',head:true}).eq('referred_by',USER.id);
+  if(PROFILE)PROFILE.refs={lvl1:c1||0,total:c1||0};
+  renderAll();
+}
+async function saveProfile(){
+  if(!USER||!PROFILE)return;
+  await sb.from('users').update({balance:PROFILE.balance,total_earned:PROFILE.total_earned,portfolio:PROFILE.portfolio,pending:PROFILE.pending,clock_start:PROFILE.clock_start,buy_date:PROFILE.buy_date,ref_earned:PROFILE.ref_earned,global_clock:PROFILE.global_clock||null}).eq('id',USER.id);
+}
+function nav(page){
+  document.querySelectorAll('.pg').forEach(p=>p.classList.remove('on'));
+  document.querySelectorAll('.nb').forEach(b=>b.classList.remove('on'));
+  const pg=document.getElementById('pg-'+page),nb=document.getElementById('nb-'+page);
+  if(pg)pg.classList.add('on');if(nb)nb.classList.add('on');
+  if(page==='wallet'){renderTxs();renderStats();}
+  if(page==='home'){renderMyGrid();renderStats();}
+  if(page==='catalog')renderCatGrid();
+  if(page==='ref')renderRefs();
+  if(page==='premios')loadMyVideos();
+}
+
+async function loadMyVideos(){
+  if(!USER)return;
+  const el=document.getElementById('my-videos');if(!el)return;
+  const {data:videos}=await sb.from('video_submissions').select('*').eq('user_id',USER.id).order('created_at',{ascending:false});
+  if(!videos||!videos.length){el.innerHTML='<div style="color:var(--dim);font-size:13px;padding:8px 0">Sin videos enviados aún.</div>';return;}
+  const statusColors={'pending':'#B45309','approved':'#1A7F3C','rejected':'#C0392B'};
+  const statusLabels={'pending':'Pendiente','approved':'Aprobado ✅','rejected':'Rechazado'};
+  el.innerHTML=videos.map(v=>`
+    <div style="background:var(--bg2);border:1px solid var(--line2);border-radius:14px;padding:14px;margin-bottom:10px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+        <span style="font-size:12px;font-weight:600;color:${statusColors[v.status]||'#666'};background:${v.status==='approved'?'#F0FFF4':v.status==='rejected'?'#FFF0F0':'#FFFBEB'};padding:4px 10px;border-radius:6px">${statusLabels[v.status]||v.status}</span>
+        <span style="font-size:11px;color:var(--dim)">${new Date(v.created_at).toLocaleDateString('es-ES')}</span>
+      </div>
+      <a href="${v.video_url}" target="_blank" style="font-size:12px;color:var(--blue);word-break:break-all;text-decoration:none">${v.video_url}</a>
+      ${v.status==='approved'?'<div style="font-size:12px;color:var(--green);margin-top:6px;font-weight:600">+$3.00 acreditados 💰</div>':''}
+    </div>`).join('');
+}
+async function buyPhone(id){
+  const p=PH.find(x=>x.id===id);if(!p||!PROFILE)return;
+  if(PROFILE.balance<p.price){toast('Saldo insuficiente.');return;}
+  PROFILE.balance-=p.price;
+  if(!PROFILE.portfolio)PROFILE.portfolio={};
+  PROFILE.portfolio[id]=(PROFILE.portfolio[id]||0)+1;
+  if(!PROFILE.clock_start)PROFILE.clock_start={};
+  if(!PROFILE.clock_start[id])PROFILE.clock_start[id]=Date.now();
+  // Reset clock if already owned (buying another unit)
+  if(!PROFILE.buy_date)PROFILE.buy_date={};
+  if(!PROFILE.buy_date[id])PROFILE.buy_date[id]=Date.now();
+  if(!PROFILE.pending)PROFILE.pending={};
+  await saveProfile();
+  toast('Compraste '+p.name);renderAll();
+  if(PROFILE.referred_by){
+    const LEVELS=[0.08,0.04,0.02];let cId=PROFILE.referred_by;
+    for(let l=0;l<3;l++){
+      const {data:ref}=await sb.from('users').select('id,balance,ref_earned,referred_by').eq('id',cId).single();
+      if(!ref)break;
+      const com=parseFloat((p.price*LEVELS[l]).toFixed(4));
+      await sb.from('users').update({balance:ref.balance+com,ref_earned:(ref.ref_earned||0)+com}).eq('id',ref.id);
+      if(!ref.referred_by)break;cId=ref.referred_by;
+    }
+  }
+}
+function collectOne(id){
+  if(!PROFILE)return;
+  const now=Date.now();
+  const cs=PROFILE.clock_start?parseInt(PROFILE.clock_start[id]||0):0;
+  if(!cs||now-cs<86400000){toast('Aún no está listo. Espera 24h.');return;}
+  const p=PH.find(x=>x.id===id);if(!p)return;
+  const q=PROFILE.portfolio&&PROFILE.portfolio[id]||0;
+  // Calculate exact earnings for exactly 24h
+  const a=parseFloat((p.daily*q).toFixed(4));
+  if(a<0.001){toast('Sin ganancias.');return;}
+  PROFILE.balance+=a;PROFILE.total_earned=(PROFILE.total_earned||0)+a;
+  PROFILE.pending[id]=0;PROFILE.clock_start[id]=now;
+  if(!PROFILE.earnings)PROFILE.earnings=[];
+  PROFILE.earnings.unshift({type:'earning',amount:a,status:'paid',created_at:new Date().toISOString()});
+  saveProfile();toast('Cobraste '+f(a));renderAll();
+}
+function collectAll(){
+  if(!PROFILE)return;
+  const now=Date.now();
+  const gc=parseInt(PROFILE.global_clock||0);
+  if(!gc||now-gc<86400000){
+    const rem=86400000-(now-gc);
+    toast('Faltan '+fCD(rem)+' para cobrar.');return;
+  }
+  let tot=0;
+  Object.entries(PROFILE.portfolio||{}).forEach(([id,q])=>{
+    if(!q||q<=0)return;
+    const p=PH.find(x=>x.id===id);if(!p)return;
+    tot+=parseFloat((p.daily*q).toFixed(4));
+  });
+  if(tot<0.001){toast('Sin ganancias.');return;}
+  PROFILE.balance+=tot;
+  PROFILE.total_earned=(PROFILE.total_earned||0)+tot;
+  PROFILE.global_clock=now;
+  if(!PROFILE.earnings)PROFILE.earnings=[];
+  PROFILE.earnings.unshift({type:'earning',amount:tot,status:'paid',created_at:new Date().toISOString()});
+  saveProfile();
+  toast('Cobraste '+f(tot)+' 💰');
+  renderAll();
+}
+let recharging=false;
+async function doRecharge(){
+  if(recharging||!PROFILE)return;
+  const hash=document.getElementById('hash-i').value.trim();
+  const amt=parseFloat(document.getElementById('amt-i').value);
+  if(!hash||hash.length<10){toast('Hash inválido');return;}
+  if(!amt||amt<5){toast('Mínimo de recarga es $5.00');return;}
+  recharging=true;toast('Enviando...');
+  const {error}=await sb.from('transactions').insert({id:'TX-'+Date.now(),user_id:USER.id,type:'deposit',hash,amount:amt,status:'pending'});
+  if(error){toast('Error: '+error.message);recharging=false;return;}
+  document.getElementById('hash-i').value='';document.getElementById('amt-i').value='';
+  toast('Recarga enviada. Se revisará en 1-3 horas.');
+  await loadProfile();setTimeout(()=>recharging=false,5000);
+}
+let withdrawing=false;
+async function doWithdraw(){
+  if(withdrawing||!PROFILE)return;
+  const wallet=document.getElementById('wdr-w').value.trim();
+  const amt=parseFloat(document.getElementById('wdr-a').value);
+  if(!wallet||wallet.length<10){toast('Dirección inválida');return;}
+  if(!amt||amt<5){toast('Mínimo $5.00');return;}
+  if(amt>PROFILE.balance){toast('Saldo insuficiente');return;}
+  withdrawing=true;toast('Enviando...');
+  const fee=parseFloat((amt*0.05).toFixed(2));
+  const net=parseFloat((amt-fee).toFixed(2));
+  PROFILE.balance-=amt;await saveProfile();
+  await sb.from('transactions').insert({id:'TX-'+Date.now(),user_id:USER.id,type:'withdraw',wallet,amount:amt,fee,net,status:'pending'});
+  document.getElementById('wdr-w').value='';document.getElementById('wdr-a').value='';
+  toast('Retiro solicitado. Recibirás '+f(net));
+  await loadProfile();setTimeout(()=>withdrawing=false,5000);
+}
+function renderStats(){
+  const bal=PROFILE?PROFILE.balance:0;
+  const set=(id,v)=>{const el=document.getElementById(id);if(el)el.textContent=v;};
+  set('hbal',f(bal));set('sb',f(bal));set('wbal',f(bal));
+  // Update global timer display
+  const timerEl=document.getElementById('collect-timer');
+  const btn=document.getElementById('collect-all-btn');
+  if(timerEl&&PROFILE){
+    const now=Date.now();
+    const gc=parseInt(PROFILE.global_clock||0);
+    const hasPhones=Object.values(PROFILE.portfolio||{}).some(q=>q>0);
+    if(!hasPhones){timerEl.textContent='';return;}
+    if(!gc){timerEl.textContent='Compra un iPhone para empezar a ganar';return;}
+    const elapsed=now-gc;
+    if(elapsed>=86400000){
+      timerEl.textContent='✅ Listo para cobrar';
+      timerEl.style.color='#30D158';
+      if(btn){btn.style.background='#30D158';btn.style.color='#000';}
+    } else {
+      const rem=86400000-elapsed;
+      timerEl.textContent='Próximo cobro en '+fCD(rem);
+      timerEl.style.color='var(--muted)';
+      if(btn){btn.style.background='transparent';btn.style.color='var(--green)';btn.style.border='1px solid var(--green)';}
+    }
+  }
+}
+function makeCard(p){
+  const qty=PROFILE&&PROFILE.portfolio?PROFILE.portfolio[p.id]||0:0;
+  const bal=PROFILE?PROFILE.balance:0;
+  const canBuy=bal>=p.price;
+  const now=Date.now();
+  const cs=PROFILE&&PROFILE.clock_start?PROFILE.clock_start[p.id]:null;
+  // cs is stored as unix timestamp in milliseconds
+  const csNum=cs?parseInt(cs):null;
+  const elapsed=csNum?now-csNum:0;
+  const rem=qty>0&&csNum?Math.max(0,86400000-elapsed):0;
+  const cd=rem>0?fCD(rem):null;
+  const bd=PROFILE&&PROFILE.buy_date?PROFILE.buy_date[p.id]||cs:null;
+  const dLeft=bd?Math.max(0,65-Math.floor((now-bd)/86400000)):65;
+  const pct=Math.round((dLeft/65)*100);
+  const bc=dLeft>20?'var(--green)':dLeft>10?'var(--gold)':'var(--red)';
+  const roi=((p.daily/p.price)*100).toFixed(0);
+  return '<div class="pc'+(qty>0?' owned':'')+'">'+
+    '<div class="pci"><div class="ptag">'+(p.id==='17'?'NUEVO':roi+'%/día')+'</div>'+
+    (qty>0?'<div class="pob">'+qty+'×</div>':'')+
+    '<img src="'+p.img+'" alt="'+p.name+'" loading="lazy" onerror="this.style.opacity=\'.2\'"></div>'+
+    '<div class="pcb"><div class="pnm">'+p.name+'</div><div class="pyr">'+p.year+'</div>'+
+    '<div class="prow"><div class="pst"><div class="pst-l">Precio</div><div class="pst-v">'+f(p.price)+'</div></div>'+
+    '<div class="pst"><div class="pst-l">Ganas/día</div><div class="pst-v g">+'+f(p.daily)+'</div></div></div>'+
+    (qty>0?
+      (cd
+        ?'<div class="pclk"><span>⏱</span><span style="color:var(--dim);font-size:9px">Cobro en</span><span class="pclk-t">'+cd+'</span></div>'
+        :'<div class="pclk" style="background:rgba(48,209,88,0.1);border-color:rgba(48,209,88,0.3)"><span>✅</span><span style="color:#30D158;font-size:11px;font-weight:600">+'+f(p.daily*qty)+' listo — ve a Inicio para cobrar todo</span></div>'
+      )
+    :'')+ 
+    (qty>0?'<div class="dbar"><div class="dbar-top"><span>Vida</span><span style="color:'+bc+';font-weight:700">'+dLeft+' días</span></div><div class="dbar-track"><div class="dbar-fill" style="background:'+bc+';width:'+pct+'%"></div></div></div>':'')+
+    '<button class="bbuy" '+(canBuy?'':'disabled')+' onclick="buyPhone(\''+p.id+'\')">'+
+    (canBuy?'Comprar '+f(p.price):'Necesitas '+f(p.price-bal)+' más')+'</button></div></div>';
+}
+function renderCatGrid(){const g=document.getElementById('cat-grid');if(g)g.innerHTML=PH.map(p=>makeCard(p)).join('');}
+function renderMyGrid(){
+  const g=document.getElementById('my-grid'),empty=document.getElementById('home-empty');if(!g)return;
+  const owned=PH.filter(p=>PROFILE&&PROFILE.portfolio&&(PROFILE.portfolio[p.id]||0)>0);
+  if(!owned.length){g.innerHTML='';if(empty)empty.style.display='block';}
+  else{if(empty)empty.style.display='none';g.innerHTML=owned.map(p=>makeCard(p)).join('');}
+}
+function renderTxs(){
+  const el=document.getElementById('txs');if(!el)return;
+  const txs=PROFILE&&PROFILE.txs||[];
+  const earnings=PROFILE&&PROFILE.earnings||[];
+  const all=[...txs,...earnings].sort((a,b)=>new Date(b.created_at||0)-new Date(a.created_at||0));
+  if(!all.length){el.innerHTML='<div style="color:var(--dim);font-size:13px;padding:10px 0">Sin transacciones.</div>';return;}
+  el.innerHTML=all.map(tx=>{
+    const isEarning=tx.type==='earning';
+    const isDeposit=tx.type==='deposit';
+    const typeClass=isEarning||isDeposit?'d':'w';
+    const typeLabel=isEarning?'Ganancia':isDeposit?'Recarga':'Retiro';
+    const detail=isDeposit?(tx.hash||''):isEarning?'Cobro diario':(tx.wallet||'');
+    const amtPrefix=isEarning||isDeposit?'+':'-';
+    const statusClass=tx.status==='pending'?'p':tx.status==='done'||tx.status==='paid'?'ok':'no';
+    const statusLabel=tx.status==='pending'?'Pendiente':tx.status==='done'||tx.status==='paid'?'Listo':'Rechazado';
+    return '<div class="tx"><div class="tx-tp '+typeClass+'">'+typeLabel+'</div>'+
+      '<div class="tx-h">'+detail+'</div>'+
+      '<div class="tx-a '+typeClass+'">'+amtPrefix+f(tx.amount)+'</div>'+
+      '<div class="tx-s '+statusClass+'">'+statusLabel+'</div></div>';
+  }).join('');
+}
+function renderRefs(){
+  const set=(id,v)=>{const el=document.getElementById(id);if(el)el.textContent=v;};
+  const r=PROFILE&&PROFILE.refs||{};
+  set('r-tot',r.total||0);set('r-earn',f(PROFILE&&PROFILE.ref_earned||0));
+  set('r-l1',r.lvl1||0);set('r-l2',0);set('r-l3',0);
+  const rl=document.getElementById('ref-link');
+  if(rl&&PROFILE&&PROFILE.ref_code)rl.value='https://roiapple.org/?ref='+PROFILE.ref_code;
+}
+function renderAll(){renderStats();renderMyGrid();renderCatGrid();renderTxs();renderRefs();}
+function tick(){
+  if(!PROFILE)return;
+  renderMyGrid();
+}
+
+// ADMIN
+function isAdmin(){return USER&&USER.email===ADMIN_EMAIL;}
+async function openAdmin(){
+  if(!isAdmin())return;
+  document.getElementById('admin-panel').style.display='block';
+  await loadAdminData();
+}
+function closeAdmin(){document.getElementById('admin-panel').style.display='none';}
+function adminTab(tab,btn){
+  if(tab==='videos')setTimeout(loadAdminVideos,100);
+  document.querySelectorAll('.admin-tab').forEach(b=>b.classList.remove('on'));
+  document.querySelectorAll('.admin-section').forEach(s=>s.classList.remove('on'));
+  btn.classList.add('on');document.getElementById('as-'+tab).classList.add('on');
+  if(tab==='videos')loadAdminVideos();
+}
+
+async function loadAdminVideos(){
+  const el=document.getElementById('admin-videos-list');if(!el)return;
+  const {data:videos}=await sb.from('video_submissions').select('*').order('created_at',{ascending:false});
+  if(!videos||!videos.length){el.innerHTML='<p style="color:var(--dim);padding:16px 0">Sin videos enviados aún.</p>';return;}
+  el.innerHTML=videos.map(v=>`
+    <div class="atx" style="margin-bottom:10px">
+      <div class="atx-top">
+        <div><div class="atx-user">${v.user_name||'—'}</div><div class="atx-email">${v.user_email||'—'}</div></div>
+        <span class="atx-status ${v.status==='pending'?'pending':v.status==='approved'?'done':'rejected'}">${v.status==='pending'?'Pendiente':v.status==='approved'?'Aprobado':'Rechazado'}</span>
+      </div>
+      <a href="${v.video_url}" target="_blank" style="display:block;font-family:monospace;font-size:12px;color:var(--blue);word-break:break-all;background:var(--bg3);padding:8px 10px;border-radius:8px;margin-bottom:10px;text-decoration:none">${v.video_url}</a>
+      ${v.status==='pending'?`<div class="atx-actions">
+        <button class="btn-approve" onclick="approveVideo('${v.id}','${v.user_id}')">✅ Aprobar +$3</button>
+        <button class="btn-reject" onclick="rejectVideo('${v.id}')">Rechazar</button>
+      </div>`:''}
+    </div>`).join('');
+}
+
+async function approveVideo(videoId,userId){
+  if(!confirm('Aprobar video y acreditar $3.00?'))return;
+  await sb.from('video_submissions').update({status:'approved'}).eq('id',videoId);
+  const {data:u}=await sb.from('users').select('balance').eq('id',userId).single();
+  if(u)await sb.from('users').update({balance:u.balance+3}).eq('id',userId);
+  await sb.from('transactions').insert({id:'TX-'+Date.now(),user_id:userId,type:'deposit',hash:'PREMIO_VIDEO',amount:3,status:'done'});
+  toast('Video aprobado y $3.00 acreditados');
+  loadAdminVideos();
+}
+
+async function rejectVideo(videoId){
+  if(!confirm('Rechazar este video?'))return;
+  await sb.from('video_submissions').update({status:'rejected'}).eq('id',videoId);
+  toast('Video rechazado');
+  loadAdminVideos();
+}
+async function loadAdminData(){
+  const {data:users,count:uc}=await sb.from('users').select('*',{count:'exact'});
+  const {data:txs}=await sb.from('transactions').select('*,users(name,email)').order('created_at',{ascending:false});
+  const deps=txs?txs.filter(t=>t.type==='deposit'):[];
+  const wdrs=txs?txs.filter(t=>t.type==='withdraw'):[];
+  const pendDeps=deps.filter(t=>t.status==='pending').length;
+  const pendWdrs=wdrs.filter(t=>t.status==='pending').length;
+  const totalBal=users?users.reduce((a,u)=>a+(u.balance||0),0):0;
+  const set=(id,v)=>{const el=document.getElementById(id);if(el)el.textContent=v;};
+  set('k-users',uc||0);set('k-bal',f(totalBal));set('k-deps',pendDeps);set('k-wdrs',pendWdrs);
+  const sBadge=s=>'<span class="atx-status '+(s==='pending'?'pending':s==='done'?'done':'rejected')+'">'+(s==='pending'?'Pendiente':s==='done'?'Aprobado':'Rechazado')+'</span>';
+  const dl=document.getElementById('admin-deps-list');
+  if(dl)dl.innerHTML=deps.length?deps.map(t=>`<div class="atx"><div class="atx-top"><div><div class="atx-user">${t.users?t.users.name:'—'}</div><div class="atx-date">${t.users?t.users.email:'—'} · ${new Date(t.created_at).toLocaleString('es-ES',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})}</div></div><div class="atx-amt dep">${f(t.amount)}</div></div><div class="atx-hash">${t.hash||'—'}</div>${sBadge(t.status)}${t.status==='pending'?`<div class="atx-actions"><button class="btn-approve" onclick="approveDeposit('${t.id}','${t.user_id}',${t.amount})">✅ Aprobar</button><button class="btn-reject" onclick="rejectDeposit('${t.id}')">❌ Rechazar</button></div>`:''}</div>`).join(''):'<div style="color:var(--dim);padding:20px 0;text-align:center">Sin recargas</div>';
+  const wl=document.getElementById('admin-wdrs-list');
+  if(wl)wl.innerHTML=wdrs.length?wdrs.map(t=>`<div class="atx"><div class="atx-top"><div><div class="atx-user">${t.users?t.users.name:'—'}</div><div class="atx-date">${new Date(t.created_at).toLocaleString('es-ES',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})}</div></div><div class="atx-amt wdr">${f(t.amount)}</div></div><div class="atx-hash">👛 ${t.wallet||'—'}</div>${t.fee?`<div style="font-size:11px;color:var(--muted)">Comisión: ${f(t.fee)} · Recibirá: <strong style="color:var(--green)">${f(t.net)}</strong></div>`:''} ${sBadge(t.status)}${t.status==='pending'?`<div class="atx-actions"><button class="btn-approve" onclick="approveWithdraw('${t.id}')">✅ Procesar</button><button class="btn-reject" onclick="rejectWithdraw('${t.id}','${t.user_id}',${t.amount})">❌ Rechazar</button></div>`:''}</div>`).join(''):'<div style="color:var(--dim);padding:20px 0;text-align:center">Sin retiros</div>';
+  const ul=document.getElementById('admin-users-list');
+  if(ul)ul.innerHTML=users&&users.length?users.map(u=>`<div class="auser" id="au-${u.id}" onclick="selUser('${u.id}')"><div class="auser-top"><div><div class="auser-name">${u.name}</div><div class="auser-email">${u.email}</div></div><div class="auser-bal">${f(u.balance)}</div></div><div class="auser-actions"><div class="manual-row"><input type="number" id="mi-${u.id}" placeholder="Monto a acreditar" min="0" step="0.01"><button class="btn-manual" onclick="manualCredit('${u.id}',event)">Acreditar</button></div><button class="btn-reset" onclick="resetUser('${u.id}',event)">🗑 Resetear usuario</button></div></div>`).join(''):'<div style="color:var(--dim);padding:20px 0;text-align:center">Sin usuarios</div>';
+}
+function selUser(id){document.querySelectorAll('.auser').forEach(u=>u.classList.remove('selected'));const el=document.getElementById('au-'+id);if(el)el.classList.add('selected');}
+async function approveDeposit(txId,userId,amount){
+  if(!confirm('Aprobar recarga de '+f(amount)+'?'))return;
+  const {data:u}=await sb.from('users').select('balance').eq('id',userId).single();
+  if(!u)return;
+  await sb.from('transactions').update({status:'done'}).eq('id',txId);
+  await sb.from('users').update({balance:u.balance+amount}).eq('id',userId);
+  toast('Recarga aprobada');await loadAdminData();
+}
+async function rejectDeposit(txId){
+  if(!confirm('Rechazar esta recarga?'))return;
+  await sb.from('transactions').update({status:'rejected'}).eq('id',txId);
+  toast('Rechazada');await loadAdminData();
+}
+async function approveWithdraw(txId){
+  if(!confirm('Marcar como procesado?'))return;
+  await sb.from('transactions').update({status:'done'}).eq('id',txId);
+  toast('Procesado');await loadAdminData();
+}
+async function rejectWithdraw(txId,userId,amount){
+  if(!confirm('Rechazar y devolver saldo?'))return;
+  await sb.from('transactions').update({status:'rejected'}).eq('id',txId);
+  const {data:u}=await sb.from('users').select('balance').eq('id',userId).single();
+  if(u)await sb.from('users').update({balance:u.balance+amount}).eq('id',userId);
+  toast('Rechazado y saldo devuelto');await loadAdminData();
+}
+async function manualCredit(userId,e){
+  e.stopPropagation();
+  const inp=document.getElementById('mi-'+userId);
+  const amt=parseFloat(inp.value);
+  if(!amt||amt<=0){toast('Monto inválido');return;}
+  if(!confirm('Acreditar '+f(amt)+'?'))return;
+  const {data:u}=await sb.from('users').select('balance').eq('id',userId).single();
+  if(!u)return;
+  await sb.from('users').update({balance:u.balance+amt}).eq('id',userId);
+  await sb.from('transactions').insert({id:'TX-'+Date.now(),user_id:userId,type:'deposit',hash:'MANUAL',amount:amt,status:'done'});
+  inp.value='';toast('Saldo acreditado');await loadAdminData();
+}
+async function resetUser(userId,e){
+  e.stopPropagation();
+  if(!confirm('Resetear usuario?'))return;
+  await sb.from('users').update({balance:0,total_earned:0,portfolio:{},pending:{},clock_start:{},buy_date:{},ref_earned:0}).eq('id',userId);
+  toast('Usuario reseteado');await loadAdminData();
+}
+function initApp(){renderCatGrid();renderAll();setInterval(tick,1000);setInterval(loadProfile,10000);}
+(async()=>{
+  // Handle password reset from email link
+  const hash=window.location.hash;
+  if(hash.includes('type=recovery')){
+    // Show password reset form
+    document.getElementById('auth').style.display='flex';
+    document.querySelector('.atabs').style.display='none';
+    document.getElementById('tab-login').style.display='none';
+    document.getElementById('tab-register').style.display='none';
+    const resetDiv=document.createElement('div');
+    resetDiv.id='tab-reset';
+    resetDiv.innerHTML=`
+      <div style="font-family:'Orbitron',sans-serif;font-weight:800;font-size:18px;text-align:center;margin-bottom:8px">Nueva contraseña</div>
+      <div style="font-size:12px;color:var(--muted);text-align:center;margin-bottom:16px">Escribe tu nueva contraseña</div>
+      <div class="flbl">Nueva contraseña</div>
+      <input class="fi" id="np-pass" type="password" placeholder="Mínimo 6 caracteres">
+      <div class="flbl">Confirmar contraseña</div>
+      <input class="fi" id="np-pass2" type="password" placeholder="Repite tu contraseña" onkeydown="if(event.key==='Enter')doResetPassword()">
+      <button class="abtn" id="np-btn" onclick="doResetPassword()">Cambiar contraseña</button>
+      <div class="aerr" id="np-err"></div>
+      <div class="aok" id="np-ok"></div>
+    `;
+    document.querySelector('.abox').appendChild(resetDiv);
+    return;
+  }
+  const {data:{session}}=await sb.auth.getSession();
+  if(session){
+    USER=session.user;await loadProfile();
+    document.getElementById('auth').style.display='none';
+    document.querySelector('.hdr').style.display='flex';
+    document.querySelector('.bnav').style.display='flex';
+    initApp();
+  }
+  else{
+    document.getElementById('auth').style.display='none';
+    document.getElementById('auth').style.display='flex';
+    document.querySelector('.hdr').style.display='none';
+    document.querySelector('.bnav').style.display='none';
+    renderCatGrid();
+  }
+})();
+
+async function doResetPassword(){
+  const pass=document.getElementById('np-pass').value;
+  const pass2=document.getElementById('np-pass2').value;
+  const err=document.getElementById('np-err');const ok=document.getElementById('np-ok');
+  err.style.display='none';ok.style.display='none';
+  if(pass.length<6){err.textContent='Mínimo 6 caracteres.';err.style.display='block';return;}
+  if(pass!==pass2){err.textContent='Las contraseñas no coinciden.';err.style.display='block';return;}
+  const btn=document.getElementById('np-btn');btn.disabled=true;btn.textContent='Guardando...';
+  const {error}=await sb.auth.updateUser({password:pass});
+  if(error){err.textContent=error.message;err.style.display='block';btn.disabled=false;btn.textContent='Cambiar contraseña';return;}
+  ok.textContent='Contraseña cambiada. Iniciando sesión...';ok.style.display='block';
+  setTimeout(()=>location.href='https://roiapple.org',2000);
+}
+</script>
+</body>
+</html>
